@@ -45,7 +45,7 @@ export default function Greet({ navigation }) {
       // Request location permission
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("❌ Permission Denied", "Enable location to send SOS.");
+        Alert.alert("Permission Denied", "Enable location to send SOS.");
         return;
       }
 
@@ -69,27 +69,29 @@ export default function Greet({ navigation }) {
         })
         .then((data) => {
           console.log("SOS sent:", data);
-          Alert.alert("✅ Success", "SOS sent successfully!");
+          Alert.alert("Success", "SOS sent successfully!");
         })
         .catch((err) => {
           console.warn("Network issue:", err);
-          // Still show success if message is likely sent
-          Alert.alert("⚠️ Warning", "SOS sent (network may have delayed response).");
+          Alert.alert(
+            "Warning",
+            "SOS sent (network may have delayed response)."
+          );
         });
     } catch (err) {
       console.error("SOS Error:", err);
-      Alert.alert("❌ Error", "Failed to send SOS. Try again.");
+      Alert.alert("Error", "Failed to send SOS. Try again.");
     }
   };
 
   // Cancel modal submit
   const handleCancelSubmit = () => {
     if (!pin || !reason) {
-      Alert.alert("⚠️ Missing Fields", "Please enter your PIN and a reason.");
+      Alert.alert("Missing Fields", "Please enter your PIN and a reason.");
       return;
     }
     setCancelModalVisible(false);
-    Alert.alert("✅ Cancelled", "Your SOS request has been cancelled.");
+    Alert.alert("Cancelled", "Your SOS request has been cancelled.");
     setPin("");
     setReason("");
   };
@@ -110,7 +112,7 @@ export default function Greet({ navigation }) {
 
       {/* Title */}
       <Text style={styles.title}>
-        NO TO <Text style={{ color: "purple" }}>GBV</Text>
+        NO TO <Text style={{ color: "red" }}>GBV</Text>
       </Text>
       <Text style={styles.subtitle}>An immediate, life-saving resource.</Text>
 
@@ -120,13 +122,18 @@ export default function Greet({ navigation }) {
         onPress={() => setCancelModalVisible(true)}
         activeOpacity={0.9}
       >
-        <Icon name="times-circle" size={18} color="#111827" style={styles.icon} />
+        <Icon
+          name="times-circle"
+          size={18}
+          color="#111827"
+          style={styles.icon}
+        />
         <Text style={[styles.actionText, { color: "#111827" }]}>Cancel SOS</Text>
       </TouchableOpacity>
 
       {/* Login */}
       <TouchableOpacity
-        style={[styles.actionButton, { backgroundColor: "#8a2be2" }]}
+        style={[styles.actionButton, { backgroundColor: "blue" }]}
         onPress={() => navigation.navigate("Login")}
         activeOpacity={0.9}
       >
@@ -138,7 +145,12 @@ export default function Greet({ navigation }) {
       <Modal visible={cancelModalVisible} transparent animationType="fade">
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
-            <Icon name="ban" size={40} color="#EF4444" style={{ marginBottom: 10 }} />
+            <Icon
+              name="ban"
+              size={40}
+              color="#EF4444"
+              style={{ marginBottom: 10 }}
+            />
             <Text style={styles.modalTitle}>Cancel SOS Request</Text>
 
             <TextInput
@@ -157,7 +169,10 @@ export default function Greet({ navigation }) {
               multiline
             />
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleCancelSubmit}>
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleCancelSubmit}
+            >
               <Icon name="check-circle" size={18} color="#fff" style={styles.icon} />
               <Text style={styles.submitText}>Submit</Text>
             </TouchableOpacity>
@@ -272,7 +287,7 @@ const styles = StyleSheet.create({
   submitButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#8a2be2",
+    backgroundColor: "blue",
     paddingVertical: 12,
     borderRadius: 8,
     marginTop: 10,
@@ -299,7 +314,7 @@ const styles = StyleSheet.create({
     color: "#374151",
   },
   link: {
-    color: "purple",
+    color: "blue", 
     fontWeight: "bold",
   },
 });

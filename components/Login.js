@@ -38,7 +38,7 @@ export default function Login({ navigation }) {
 
       {/* Email Input */}
       <View style={styles.inputContainer}>
-        <Icon name="envelope" size={20} color="#8a2be2" style={styles.icon} />
+        <Icon name="envelope" size={20} color="blue" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -52,7 +52,7 @@ export default function Login({ navigation }) {
 
       {/* Password Input */}
       <View style={styles.inputContainer}>
-        <Icon name="lock" size={20} color="#8a2be2" style={styles.icon} />
+        <Icon name="lock" size={20} color="blue" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Password"
@@ -68,7 +68,7 @@ export default function Login({ navigation }) {
           <Icon
             name={showPassword ? "eye" : "eye-slash"}
             size={20}
-            color="#8a2be2"
+            color="blue"
           />
         </TouchableOpacity>
       </View>
@@ -110,13 +110,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#8a2be2",
+    color: "blue", // changed from purple to blue
     marginBottom: 5,
     textAlign: "center",
   },
   caption: {
     fontSize: 14,
-    color: "#6B7280",
+    color: "black", // changed from gray to black
     marginBottom: 30,
     textAlign: "center",
   },
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 15,
     backgroundColor: "#fff",
-    shadowColor: "#8a2be2",
+    shadowColor: "blue", // changed from purple to blue
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 2,
@@ -144,23 +144,23 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 50,
-    color: "#111827",
+    color: "black", // changed text color to black
   },
   forgot: {
-    color: "#8a2be2",
+    color: "blue", // changed from purple to blue
     textAlign: "right",
     marginBottom: 25,
     fontWeight: "600",
   },
   button: {
     flexDirection: "row",
-    backgroundColor: "#8a2be2",
+    backgroundColor: "blue", // changed from purple to blue
     padding: 16,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
-    shadowColor: "#8a2be2",
+    shadowColor: "blue", // changed from purple to blue
     shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 5,
@@ -175,10 +175,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   registerText: {
-    color: "#6B7280",
+    color: "black", // changed from gray to black
   },
   registerLink: {
-    color: "#8a2be2",
+    color: "blue", // changed from purple to blue
     fontWeight: "bold",
   },
 });

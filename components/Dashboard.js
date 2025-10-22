@@ -24,7 +24,7 @@ export default function Dashboard({ navigation }) {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("❌ Permission Denied", "Enable location to join your community.");
+        Alert.alert(" Permission Denied", "Enable location to join your community.");
         return;
       }
 

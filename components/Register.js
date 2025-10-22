@@ -9,10 +9,10 @@ export default function Register({ navigation }) {
 
   const handleRegister = () => {
     if (!username || !email || !password) {
-      Alert.alert("⚠️ Error", "All fields are required!");
+      Alert.alert("Error", "All fields are required!");
       return;
     }
-    Alert.alert("✅ Success", "Registration successful!");
+    Alert.alert("Success", "Registration successful!");
     navigation.navigate("Login");
   };
 
@@ -24,20 +24,22 @@ export default function Register({ navigation }) {
       </Text>
 
       <View style={styles.inputContainer}>
-        <Icon name="user" size={20} color="gray" style={styles.icon} />
+        <Icon name="user" size={20} color="blue" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Username"
+          placeholderTextColor="#999"
           value={username}
           onChangeText={setUsername}
         />
       </View>
 
       <View style={styles.inputContainer}>
-        <Icon name="envelope" size={20} color="gray" style={styles.icon} />
+        <Icon name="envelope" size={20} color="blue" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Email"
+          placeholderTextColor="#999"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -46,10 +48,11 @@ export default function Register({ navigation }) {
       </View>
 
       <View style={styles.inputContainer}>
-        <Icon name="lock" size={20} color="gray" style={styles.icon} />
+        <Icon name="lock" size={20} color="blue" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Password"
+          placeholderTextColor="#999"
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -83,35 +86,40 @@ const styles = StyleSheet.create({
     fontWeight: "bold", 
     marginBottom: 8, 
     textAlign: "center",
-    color: "#4B0082" 
+    color: "blue" // changed from purple to blue
   },
   caption: {
     fontSize: 14,
-    color: "#6B7280",
+    color: "black", // changed from gray to black
     textAlign: "center",
     marginBottom: 20,
   },
-  inputContainer: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    borderWidth: 1, 
-    borderColor: "#D1D5DB", 
-    borderRadius: 8, 
-    paddingHorizontal: 10, 
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     marginBottom: 15,
     backgroundColor: "#fff",
+    shadowColor: "blue", 
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   icon: { 
-    marginRight: 10 
+    marginRight: 10
   },
   input: { 
     flex: 1, 
     height: 50, 
-    color: "#111827",
+    color: "black", 
   },
   registerButton: { 
     flexDirection: "row",
-    backgroundColor: "#8a2be2", 
+    backgroundColor: "blue", 
     padding: 15, 
     borderRadius: 10, 
     justifyContent: "center", 
@@ -127,10 +135,10 @@ const styles = StyleSheet.create({
     marginTop: 20, 
     textAlign: "center",
     fontSize: 14,
-    color: "#6B7280",
+    color: "black", // changed from gray to black
   },
   link: { 
-    color: "#8a2be2", 
+    color: "blue", 
     fontWeight: "bold" 
   },
 });
