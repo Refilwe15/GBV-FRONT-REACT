@@ -1,0 +1,31 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Expo
+.expo/
+.expo-shared/
+
+
+
+logs/
+*.log
+*.out
+*.err
+
+# Docker
+*.pid
+*.sock
+*.swp
+tmp/
+*.tmp
+**/dist/
+**/build/
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
