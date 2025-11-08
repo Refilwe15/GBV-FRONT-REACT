@@ -12,6 +12,10 @@ import ReportIncident from "./components/ReportIncident"; // ✅ Import the new 
 import Reports from "./components/Reports";
 import ReportDetails from "./components/ReportDetails";
 import ReportsMap from "./components/ReportsMap";
+import ContactSetup from "./components/ContactSetup";
+import AdminDashboard from "./components/AdminDashboard";
+import CommunityChat from "./components/CommunityChat";
+import ChatbotScreen from "./components/ChatbotScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -52,9 +56,29 @@ export default function App() {
           options={{ title: "My Reports" }}
         />
         <Stack.Screen
+          name="ChatbotScreen"
+          component={ChatbotScreen}
+          options={{ title: "ChatbotScreen" }}
+        />
+        <Stack.Screen
           name="ReportsMap"
           component={ReportsMap}
           options={{ title: "ReportMap" }}
+        />
+        <Stack.Screen
+          name="ContactSetUp"
+          component={ContactSetup}
+          options={{ title: "ContactSetUp" }}
+        />
+        <Stack.Screen
+          name="CommunityChat"
+          component={CommunityChat}
+          options={{ title: "CommunityChat" }}
+        />
+        <Stack.Screen
+          name="AdminDashboard"
+          component={AdminDashboard}
+          options={{ title: "AdminDashboard" }}
         />
       </Stack.Navigator>
       <StatusBar style="auto" />

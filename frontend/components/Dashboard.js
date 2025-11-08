@@ -5,10 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-import * as Location from "expo-location";
+import { Ionicons } from "@expo/vector-icons"; // for the chatbot icon
 
 export default function Dashboard({ navigation }) {
   const features = [
@@ -35,10 +34,10 @@ export default function Dashboard({ navigation }) {
     },
     {
       id: 4,
-      title: "Resources",
+      title: "ContactSetUp",
       icon: "cogs",
       color: "#0EA5E9",
-      screen: "Resources",
+      screen: "ContactSetUp",
     },
     {
       id: 5,
@@ -49,57 +48,25 @@ export default function Dashboard({ navigation }) {
     },
   ];
 
-  // Navigate to community chat after detecting location
-  const navigateToCommunity = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          " Permission Denied",
-          "Enable location to join your community."
-        );
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
-
-      // Simulate fetching community from backend using location
-      // Replace with your actual API call
-      const response = await fetch(
-        `https://your-backend.com/community?lat=${latitude}&lng=${longitude}`,
-        { method: "GET" }
-      );
-
-      if (!response.ok) throw new Error("Failed to fetch community");
-
-      const community = await response.json();
-
-      if (!community) {
-        Alert.alert("No community found nearby.");
-        return;
-      }
-
-      // Navigate to the CommunityChat screen
-      navigation.navigate("CommunityChat", { communityId: community.id });
-    } catch (err) {
-      console.error(err);
-      Alert.alert("Error", "Could not determine your community.");
-    }
-  };
-
   const handleFeaturePress = (item) => {
-    if (item.screen === "CommunityChat") {
-      navigateToCommunity();
-    } else {
-      navigation.navigate(item.screen);
-    }
+    navigation.navigate(item.screen);
   };
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      <Text style={styles.header}>Dashboard</Text>
+      <View style={styles.headerWrapper}>
+        <Text style={styles.header}>Dashboard</Text>
+
+        {/* 💬 Chatbot Floating Icon */}
+        <TouchableOpacity
+          style={styles.chatbotButton}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate("ChatbotScreen")}
+        >
+          <Ionicons name="chatbubbles" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
       {/* Decorative Stop Icon */}
       <View style={styles.stopWrapper}>
@@ -161,12 +128,31 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 50,
   },
+  headerWrapper: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
   header: {
     fontSize: 30,
     fontWeight: "800",
-    textAlign: "center",
     color: "#111827",
-    marginBottom: 10,
+  },
+  chatbotButton: {
+    position: "absolute",
+    right: 0,
+    backgroundColor: "#2563EB",
+    borderRadius: 25,
+    width: 45,
+    height: 45,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#2563EB",
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 5,
   },
   stopWrapper: {
     alignItems: "center",

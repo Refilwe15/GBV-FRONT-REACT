@@ -28,16 +28,24 @@ export default function Login({ navigation }) {
       const response = await fetch(`${ENV.BACKEND_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email, password: password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Store token in local storage / AsyncStorage
+        // Store token & user type
         await AsyncStorage.setItem("token", data.access_token);
+        await AsyncStorage.setItem("user_type", data.user_type);
+
         Alert.alert("Success", "Login successful!");
-        navigation.replace("Dashboard");
+
+        // Navigate based on user type
+        if (data.user_type === "admin") {
+          navigation.replace("AdminDashboard"); // 👈 admin view
+        } else {
+          navigation.replace("Dashboard"); // 👈 normal user view
+        }
       } else {
         Alert.alert("Login Failed", data.detail || "Check your credentials.");
       }
