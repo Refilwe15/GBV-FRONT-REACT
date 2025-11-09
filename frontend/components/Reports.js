@@ -1,24 +1,43 @@
 import React, { useEffect, useState } from "react";
 import "./Reports.css";
 import ENV from "../.env";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Reports() {
   const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchReports = async () => {
       try {
+        const email = await AsyncStorage.getItem("email");
+        if (!email) {
+          console.warn("No email found in AsyncStorage");
+          setReports([]);
+          setLoading(false);
+          return;
+        }
+
         const res = await fetch(
-          `${ENV.BACKEND_URL}/incidents/?reporter_email=user@example.com`
+          `${ENV.BACKEND_URL}/incidents/?reporter_email=${encodeURIComponent(
+            email
+          )}`
         );
         const data = await res.json();
         setReports(data);
       } catch (err) {
         console.error("Failed to fetch reports:", err);
+      } finally {
+        setLoading(false);
       }
     };
+
     fetchReports();
   }, []);
+
+  if (loading) {
+    return <p>Loading your reports...</p>;
+  }
 
   return (
     <div className="reports-page">
@@ -37,6 +56,7 @@ export default function Reports() {
                 </span>
               </div>
               <p className="report-description">{report.description}</p>
+              <p className="report-description">status: {report.status}</p>
               {report.attachment && (
                 <a
                   href={report.attachment}

@@ -36,6 +36,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     user_type: Optional[str] = None
+    email: Optional[str] = None
 
 
 
@@ -68,7 +69,7 @@ class IncidentOutt(BaseModel):
     location: str
     description: str
     anonymous: bool
-    reporter_email: str
+    reporter_email: Optional[str] = None
     attachment: Optional[str]
     created_at: datetime
     predicted_category: Optional[str] = None

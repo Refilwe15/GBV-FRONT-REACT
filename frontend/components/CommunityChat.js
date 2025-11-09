@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = "http://10.0.0.114:8000";
 const EMOJIS = [
@@ -28,13 +29,24 @@ const EMOJIS = [
   "🎉",
   "💯",
 ];
-const HARDCODED_EMAIL = "user@example.com";
 
 export default function CommunityChat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [emojiModal, setEmojiModal] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const flatListRef = useRef();
 
+  // Fetch logged-in user email from AsyncStorage
+  useEffect(() => {
+    const fetchEmail = async () => {
+      const email = await AsyncStorage.getItem("email");
+      if (email) setUserEmail(email);
+    };
+    fetchEmail();
+  }, []);
+
+  // Fetch messages from server
   const fetchMessages = async () => {
     try {
       const res = await fetch(`${BASE_URL}/chat/`);
@@ -51,13 +63,21 @@ export default function CommunityChat() {
     return () => clearInterval(interval);
   }, []);
 
+  // Scroll to bottom whenever messages update
+  useEffect(() => {
+    if (messages.length && flatListRef.current) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
+
+  // Send message
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !userEmail) return;
     try {
       const res = await fetch(`${BASE_URL}/chat/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_email: HARDCODED_EMAIL, content: input }), // send hardcoded email
+        body: JSON.stringify({ user_email: userEmail, content: input }),
       });
       if (!res.ok) throw new Error("Failed to send message");
       setInput("");
@@ -72,6 +92,31 @@ export default function CommunityChat() {
     setEmojiModal(false);
   };
 
+  const renderMessage = ({ item }) => {
+    const isCurrentUser = item.user_email === userEmail;
+    return (
+      <View
+        style={[
+          styles.messageBox,
+          isCurrentUser ? styles.messageRight : styles.messageLeft,
+        ]}
+      >
+        {!isCurrentUser && (
+          <Text style={styles.userEmail}>{item.user_email}</Text>
+        )}
+        <Text style={[styles.messageText, isCurrentUser && { color: "#fff" }]}>
+          {item.content}
+        </Text>
+        <Text style={[styles.timestamp, isCurrentUser && { color: "#D1D5DB" }]}>
+          {new Date(item.created_at).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -79,18 +124,12 @@ export default function CommunityChat() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <FlatList
+          ref={flatListRef}
           data={messages}
           keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.messageBox}>
-              <Text style={styles.userEmail}>{item.user_email}</Text>
-              <Text style={styles.messageText}>{item.content}</Text>
-              <Text style={styles.timestamp}>
-                {new Date(item.created_at).toLocaleTimeString()}
-              </Text>
-            </View>
-          )}
+          renderItem={renderMessage}
           style={styles.chatList}
+          contentContainerStyle={{ paddingVertical: 10 }}
         />
 
         {/* Emoji Modal */}
@@ -133,9 +172,10 @@ export default function CommunityChat() {
             value={input}
             onChangeText={setInput}
             placeholder="Type a message..."
+            placeholderTextColor="#9CA3AF"
           />
           <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
-            <Text style={{ color: "#fff" }}>Send</Text>
+            <Text style={{ color: "#fff", fontWeight: "700" }}>Send</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -144,24 +184,44 @@ export default function CommunityChat() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F3F4F6" },
-  chatList: { flex: 1, padding: 10 },
+  container: { flex: 1, backgroundColor: "#E5DDD5" },
+  chatList: { flex: 1, paddingHorizontal: 10 },
   messageBox: {
-    backgroundColor: "#fff",
+    maxWidth: "75%",
     padding: 10,
-    marginBottom: 8,
-    borderRadius: 8,
-    elevation: 1,
+    marginVertical: 4,
+    borderRadius: 16,
   },
-  userEmail: { fontWeight: "700", color: "#1E40AF" },
-  messageText: { fontSize: 16 },
-  timestamp: { fontSize: 10, color: "#6B7280", textAlign: "right" },
+  messageLeft: {
+    alignSelf: "flex-start",
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 0,
+  },
+  messageRight: {
+    alignSelf: "flex-end",
+    backgroundColor: "#0B93F6",
+    borderTopRightRadius: 0,
+  },
+  userEmail: {
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 2,
+    fontSize: 12,
+  },
+  messageText: { fontSize: 16, color: "#111" },
+  timestamp: {
+    fontSize: 10,
+    color: "#6B7280",
+    textAlign: "right",
+    marginTop: 4,
+  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
     borderTopWidth: 1,
     borderColor: "#D1D5DB",
+    backgroundColor: "#F3F4F6",
   },
   input: {
     flex: 1,
@@ -169,13 +229,14 @@ const styles = StyleSheet.create({
     borderColor: "#D1D5DB",
     borderRadius: 20,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     marginHorizontal: 8,
     backgroundColor: "#fff",
+    color: "#111",
   },
   sendBtn: {
-    backgroundColor: "#3B82F6",
-    paddingHorizontal: 15,
+    backgroundColor: "#0B93F6",
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
   },
@@ -187,7 +248,7 @@ const styles = StyleSheet.create({
   },
   emojiGrid: {
     backgroundColor: "#fff",
-    padding: 10,
+    padding: 12,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
   },
@@ -199,7 +260,7 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     marginTop: 10,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#0B93F6",
     padding: 10,
     borderRadius: 10,
     alignItems: "center",

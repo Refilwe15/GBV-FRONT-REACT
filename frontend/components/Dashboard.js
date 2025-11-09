@@ -7,7 +7,7 @@ import {
   ScrollView,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { Ionicons } from "@expo/vector-icons"; // for the chatbot icon
+import { Ionicons } from "@expo/vector-icons"; // Chatbot icon
 
 export default function Dashboard({ navigation }) {
   const features = [
@@ -57,15 +57,6 @@ export default function Dashboard({ navigation }) {
       {/* Header */}
       <View style={styles.headerWrapper}>
         <Text style={styles.header}>Dashboard</Text>
-
-        {/* 💬 Chatbot Floating Icon */}
-        <TouchableOpacity
-          style={styles.chatbotButton}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate("ChatbotScreen")}
-        >
-          <Ionicons name="chatbubbles" size={24} color="#fff" />
-        </TouchableOpacity>
       </View>
 
       {/* Decorative Stop Icon */}
@@ -117,6 +108,15 @@ export default function Dashboard({ navigation }) {
         />
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
+
+      {/* 💬 Chatbot Floating Icon */}
+      <TouchableOpacity
+        style={styles.chatbotButton}
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate("ChatbotScreen")}
+      >
+        <Ionicons name="chatbubbles" size={28} color="#fff" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -141,18 +141,19 @@ const styles = StyleSheet.create({
   },
   chatbotButton: {
     position: "absolute",
-    right: 0,
+    bottom: 90, // slightly above logout button
+    right: 20,
     backgroundColor: "#2563EB",
-    borderRadius: 25,
-    width: 45,
-    height: 45,
+    borderRadius: 30,
+    width: 60,
+    height: 60,
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#2563EB",
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.5,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 6,
-    elevation: 5,
+    elevation: 6,
   },
   stopWrapper: {
     alignItems: "center",

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import ENV from "../.env";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -15,26 +16,52 @@ L.Icon.Default.mergeOptions({
 
 export default function ReportsMap() {
   const [locations, setLocations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const geocodeLocation = async (address) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          address
+        )}`
+      );
+      const data = await res.json();
+      if (data.length > 0) {
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      }
+    } catch (err) {
+      console.error("Geocoding failed:", err);
+    }
+    return null;
+  };
 
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const res = await fetch("http://backend:8000/incidents/");
+        const res = await fetch(`${ENV.BACKEND_URL}/incidents/all-incidents`);
         const data = await res.json();
 
-        // Extract locations and convert them to coordinates
-        // For simplicity, we assume backend returns latitude & longitude or you can use a simple geocoding function
-        const coords = data
-          .filter((r) => r.latitude && r.longitude)
-          .map((r) => ({
-            id: r.id,
-            location: r.location,
-            lat: r.latitude,
-            lng: r.longitude,
-          }));
-        setLocations(coords);
+        const coordsPromises = data.map(async (report) => {
+          const coords = await geocodeLocation(report.location);
+          if (coords) {
+            return {
+              id: report.id,
+              location: report.location,
+              description: report.description,
+              status: report.status,
+              lat: coords.lat,
+              lng: coords.lng,
+            };
+          }
+          return null;
+        });
+
+        const coordsResults = await Promise.all(coordsPromises);
+        setLocations(coordsResults.filter((r) => r !== null));
+        setLoading(false);
       } catch (err) {
-        console.error("Failed to fetch locations:", err);
+        console.error("Failed to fetch reports:", err);
+        setLoading(false);
       }
     };
 
@@ -43,13 +70,15 @@ export default function ReportsMap() {
 
   const center = locations.length
     ? [locations[0].lat, locations[0].lng]
-    : [-25.746111, 28.188056];
+    : [-23.8958, 29.4673]; // Polokwane default
+
+  if (loading) return <p>Loading map...</p>;
 
   return (
     <div style={{ height: "80vh", width: "100%", marginTop: 20 }}>
       <MapContainer
         center={center}
-        zoom={6}
+        zoom={12}
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
@@ -58,7 +87,13 @@ export default function ReportsMap() {
         />
         {locations.map((loc) => (
           <Marker key={loc.id} position={[loc.lat, loc.lng]}>
-            <Popup>{loc.location}</Popup>
+            <Popup>
+              <strong>{loc.location}</strong>
+              <br />
+              {loc.description}
+              <br />
+              <em>Status: {loc.status}</em>
+            </Popup>
           </Marker>
         ))}
       </MapContainer>

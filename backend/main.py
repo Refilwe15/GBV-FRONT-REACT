@@ -82,6 +82,8 @@ async def sos_alert(location: Location):
         
     )
 
+    print(location.phone)
+
     return {"message_sid": message.sid}
 
 

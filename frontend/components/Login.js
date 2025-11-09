@@ -37,6 +37,7 @@ export default function Login({ navigation }) {
         // Store token & user type
         await AsyncStorage.setItem("token", data.access_token);
         await AsyncStorage.setItem("user_type", data.user_type);
+        await AsyncStorage.setItem("email", data.email);
 
         Alert.alert("Success", "Login successful!");
 
