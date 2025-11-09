@@ -60,6 +60,7 @@ class Location(BaseModel):
     latitude: float
     longitude: float
     phone:str
+    message:str
     
 @app.post("/contact")
 async def sos_alert(location: Location):
@@ -77,7 +78,7 @@ async def sos_alert(location: Location):
 
     message = client.messages.create(
         from_='whatsapp:+14155238886',
-        body=f'hi refilwe you have an emergency alert  Location: {location_url}',
+        body=f'{location.message}: {location_url}',
         to='whatsapp:'+location.phone
         
     )

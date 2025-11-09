@@ -180,7 +180,7 @@ export default function Greet({ navigation }) {
     }
 
     try {
-      const savedPin = await AsyncStorage.getItem("user_pin");
+      const savedPin = await AsyncStorage.getItem("emergency_pin");
       const message =
         savedPin && pin === savedPin
           ? `SOS Cancelled. User sent it by mistake. Reason: ${reason}`
