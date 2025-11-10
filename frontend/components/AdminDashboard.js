@@ -15,7 +15,7 @@ import Icon from "react-native-vector-icons/FontAwesome";
 import { BarChart } from "react-native-chart-kit";
 
 const screenWidth = Dimensions.get("window").width;
-const BASE_URL = "http://10.0.0.114:8000"; // backend URL
+const BASE_URL = "http://10.220.32.224:8000"; // backend URL
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
@@ -103,7 +103,7 @@ export default function AdminDashboard() {
   if (loading)
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size="large" color="#7C3AED" />
         <Text>Loading dashboard...</Text>
       </View>
     );
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
                   chartConfig={{
                     backgroundGradientFrom: "#fff",
                     backgroundGradientTo: "#fff",
-                    color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
+                    color: (opacity = 1) => `rgba(124, 58, 237, ${opacity})`,
                     labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
                     barPercentage: 0.6,
                   }}
@@ -186,12 +186,33 @@ export default function AdminDashboard() {
             {incidents.map((inc) => (
               <View key={inc.id} style={styles.card}>
                 <Text style={styles.cardTitle}>{inc.predicted_category}</Text>
-                <Text>{inc.description}</Text>
-                <Text>Location: {inc.location}</Text>
-                <Text>Reporter: {inc.reporter_email}</Text>
-                <Text>Status: {inc.status}</Text>
+                <Text style={styles.description}>{inc.description}</Text>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Location:</Text>
+                  <Text style={styles.infoValue}>{inc.location}</Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Reporter:</Text>
+                  <Text style={styles.infoValue}>{inc.reporter_email}</Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Status:</Text>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      statusColors[inc.status?.toLowerCase()] ||
+                        statusColors.default,
+                    ]}
+                  >
+                    <Text style={styles.statusText}>{inc.status}</Text>
+                  </View>
+                </View>
+
                 <TouchableOpacity
-                  style={styles.button}
+                  style={[styles.button, { backgroundColor: "#7C3AED" }]}
                   onPress={() => {
                     setSelectedIncident(inc);
                     setIncidentModal(true);
@@ -209,13 +230,18 @@ export default function AdminDashboard() {
           users.map((u) => (
             <View key={u.id} style={styles.card}>
               <Text style={styles.cardTitle}>{u.full_name}</Text>
-              <Text>Email: {u.email}</Text>
-              <View style={{ flexDirection: "row", marginTop: 5 }}>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Email:</Text>
+                <Text style={styles.infoValue}>{u.email}</Text>
+              </View>
+
+              <View style={{ flexDirection: "row", marginTop: 10 }}>
                 <TouchableOpacity
                   onPress={() => handleEditUser(u)}
                   style={styles.userBtn}
                 >
-                  <Icon name="edit" size={16} color="#10B981" />
+                  <Icon name="edit" size={16} color="#A78BFA" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={async () => {
@@ -311,11 +337,19 @@ export default function AdminDashboard() {
 }
 
 // --- Styles ---
+const statusColors = {
+  pending: { backgroundColor: "#FBBF24" },
+  "in progress": { backgroundColor: "#3B82F6" },
+  resolved: { backgroundColor: "#10B981" },
+  dismissed: { backgroundColor: "#EF4444" },
+  default: { backgroundColor: "#A78BFA" },
+};
+
 const styles = StyleSheet.create({
   container: { flex: 1, flexDirection: "row", backgroundColor: "#F3F4F6" },
   sidebar: {
     width: 160,
-    backgroundColor: "#1E40AF",
+    backgroundColor: "#7C3AED",
     paddingTop: 40,
     paddingHorizontal: 10,
   },
@@ -330,7 +364,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
   },
-  activeItem: { backgroundColor: "#3B82F6", borderRadius: 6 },
+  activeItem: { backgroundColor: "#A78BFA", borderRadius: 6 },
   sidebarText: { color: "#fff", fontSize: 16, marginLeft: 10 },
   content: { flex: 1, padding: 10 },
   header: {
@@ -344,51 +378,34 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 12,
     borderRadius: 10,
-    marginBottom: 8,
+    marginBottom: 12,
     elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  cardTitle: { fontWeight: "700", marginBottom: 5 },
+  cardTitle: { fontWeight: "700", marginBottom: 6, fontSize: 16, color: "#6B21A8" },
+  description: { marginBottom: 8, fontSize: 14, color: "#4B5563", lineHeight: 18 },
+  infoRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
+  infoLabel: { fontWeight: "600", color: "#6B21A8", fontSize: 14 },
+  infoValue: { color: "#374151", fontSize: 14, flexShrink: 1, textAlign: "right" },
+  statusBadge: { borderRadius: 12, paddingVertical: 2, paddingHorizontal: 10, minWidth: 80, alignItems: "center" },
+  statusText: { color: "#fff", fontWeight: "600", fontSize: 13, textTransform: "capitalize" },
   button: {
     marginTop: 8,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#7C3AED",
     padding: 8,
     borderRadius: 6,
     alignItems: "center",
   },
   buttonText: { color: "#fff", fontWeight: "600" },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  modalBox: {
-    backgroundColor: "#fff",
-    margin: 20,
-    padding: 20,
-    borderRadius: 10,
-  },
+  modalOverlay: { flex: 1, justifyContent: "center", backgroundColor: "rgba(0,0,0,0.4)" },
+  modalBox: { backgroundColor: "#fff", margin: 20, padding: 20, borderRadius: 10 },
   modalTitle: { fontSize: 18, fontWeight: "700", marginBottom: 10 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 6,
-    padding: 8,
-    marginBottom: 10,
-  },
-  modalButton: {
-    flex: 1,
-    backgroundColor: "#3B82F6",
-    padding: 10,
-    borderRadius: 6,
-    alignItems: "center",
-    marginRight: 5,
-  },
+  input: { borderWidth: 1, borderColor: "#D1D5DB", borderRadius: 6, padding: 8, marginBottom: 10 },
+  modalButton: { flex: 1, backgroundColor: "#7C3AED", padding: 10, borderRadius: 6, alignItems: "center", marginRight: 5 },
   modalButtonText: { color: "#fff", fontWeight: "600" },
-  userBtn: {
-    padding: 6,
-    borderRadius: 5,
-    backgroundColor: "#E5E7EB",
-    alignItems: "center",
-  },
+  userBtn: { padding: 6, borderRadius: 5, backgroundColor: "#EDE9FE", alignItems: "center" },
 });

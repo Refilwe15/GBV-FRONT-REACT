@@ -15,35 +15,35 @@ export default function Dashboard({ navigation }) {
       id: 1,
       title: "Report Incident",
       icon: "pencil-square-o",
-      color: "#8B5CF6",
+      color: "#A855F7",
       screen: "Report",
     },
     {
       id: 2,
       title: "My Reports",
       icon: "clipboard",
-      color: "#6366F1",
+      color: "#8B5CF6",
       screen: "Reports",
     },
     {
       id: 3,
       title: "View Hotspot Map",
       icon: "map-marker",
-      color: "#3B82F6",
+      color: "#7C3AED",
       screen: "ReportsMap",
     },
     {
       id: 4,
       title: "ContactSetUp",
       icon: "cogs",
-      color: "#0EA5E9",
+      color: "#9333EA",
       screen: "ContactSetUp",
     },
     {
       id: 5,
       title: "Community Chat",
       icon: "comments",
-      color: "#8a2be2",
+      color: "#6D28D9",
       screen: "CommunityChat",
     },
   ];
@@ -124,7 +124,7 @@ export default function Dashboard({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#F3E8FF", // 💜 light lavender background
     padding: 20,
     paddingTop: 50,
   },
@@ -137,19 +137,19 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#111827",
+    color: "#4C1D95", // 💜 deep purple text
   },
   chatbotButton: {
     position: "absolute",
-    bottom: 90, // slightly above logout button
+    bottom: 90,
     right: 20,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#7C3AED", // 💜 purple floating button
     borderRadius: 30,
     width: 60,
     height: 60,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#2563EB",
+    shadowColor: "#7C3AED",
     shadowOpacity: 0.5,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 6,
@@ -162,12 +162,12 @@ const styles = StyleSheet.create({
   stopShape: {
     width: 100,
     height: 100,
-    backgroundColor: "#EF4444",
+    backgroundColor: "#C084FC", // 💜 soft purple stop icon
     borderRadius: 20,
     transform: [{ rotate: "22.5deg" }],
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#EF4444",
+    shadowColor: "#C084FC",
     shadowOpacity: 0.4,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
@@ -202,17 +202,17 @@ const styles = StyleSheet.create({
   cardText: {
     fontSize: 17,
     fontWeight: "600",
-    color: "#111827",
+    color: "#4C1D95", // 💜 deep purple for feature titles
   },
   logoutButton: {
     flexDirection: "row",
-    backgroundColor: "#EF4444",
+    backgroundColor: "#9333EA", // 💜 purple logout button
     paddingVertical: 15,
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     marginTop: "auto",
-    shadowColor: "#EF4444",
+    shadowColor: "#9333EA",
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 6,

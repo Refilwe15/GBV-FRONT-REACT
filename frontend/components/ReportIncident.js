@@ -7,7 +7,6 @@ import {
   FlatList,
   Switch,
   StyleSheet,
-  Alert,
   Platform,
   KeyboardAvoidingView,
   ScrollView,
@@ -22,6 +21,39 @@ import ENV from "../.env";
 
 const apiKey = "56da46010d5d487287ef5f2ef247c8ee";
 
+// ✅ Reusable MessageBox Component
+const MessageBox = ({ visible, type, message, onClose }) => {
+  if (!visible) return null;
+
+  const colors = {
+    success: "#10B981",
+    error: "#EF4444",
+    info: "#3B82F6",
+  };
+
+  const icons = {
+    success: "✔️",
+    error: "❌",
+    info: "ℹ️",
+  };
+
+  const color = colors[type] || "#3B82F6";
+  const icon = icons[type] || "ℹ️";
+
+  return (
+    <View style={styles.modalOverlay}>
+      <TouchableOpacity style={styles.modalOverlay} onPress={onClose} />
+      <View style={[styles.modalContainer]}>
+        <Text style={{ fontSize: 48, color, marginBottom: 15, textAlign: "center" }}>{icon}</Text>
+        <Text style={{ textAlign: "center", marginBottom: 20 }}>{message}</Text>
+        <TouchableOpacity onPress={onClose} style={[styles.modalButton, { backgroundColor: color }]}>
+          <Text style={styles.modalButtonText}>OK</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
 export default function ReportIncident({ navigation }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -30,6 +62,16 @@ export default function ReportIncident({ navigation }) {
   const [media, setMedia] = useState(null);
   const [typingTimeout, setTypingTimeout] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState("info");
+  const [modalMessage, setModalMessage] = useState("");
+
+  const showMessage = (type, message) => {
+    setModalType(type);
+    setModalMessage(message);
+    setModalVisible(true);
+  };
 
   // Fetch location suggestions
   useEffect(() => {
@@ -66,17 +108,14 @@ export default function ReportIncident({ navigation }) {
       if (result.type === "success") setMedia(result);
     } catch (err) {
       console.error(err);
-      Alert.alert("Error", "Failed to pick a file.");
+      showMessage("error", "Failed to pick a file.");
     }
   };
 
   // Submit incident report
   const handleSubmit = async () => {
     if (!query || !description) {
-      Alert.alert(
-        "Missing Fields",
-        "Please fill in both location and description."
-      );
+      showMessage("error", "Please fill in both location and description.");
       return;
     }
 
@@ -94,16 +133,13 @@ export default function ReportIncident({ navigation }) {
         if (email) {
           formData.append("reporter_email", email);
         } else {
-          console.warn("No email found in AsyncStorage");
+          showMessage("info", "You are not logged in. Your report will be anonymous.");
         }
       }
 
       if (media) {
         formData.append("attachment", {
-          uri:
-            Platform.OS === "android"
-              ? media.uri
-              : media.uri.replace("file://", ""),
+          uri: Platform.OS === "android" ? media.uri : media.uri.replace("file://", ""),
           name: media.name,
           type: media.mimeType || "application/octet-stream",
         });
@@ -117,17 +153,17 @@ export default function ReportIncident({ navigation }) {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert("Incident Submitted", "Thank you for your report.");
+        showMessage("success", "Incident submitted successfully!");
         setQuery("");
         setDescription("");
         setAnonymous(false);
         setMedia(null);
       } else {
-        Alert.alert("Submission Failed", data.detail || "Try again.");
+        showMessage("error", data.detail || "Submission failed. Try again.");
       }
     } catch (err) {
       console.error(err);
-      Alert.alert("Error", "Unable to connect to server.");
+      showMessage("error", "Unable to connect to server.");
     } finally {
       setLoading(false);
     }
@@ -218,13 +254,7 @@ export default function ReportIncident({ navigation }) {
           </View>
           <Text style={styles.uploadDesc}>Attach evidence (optional)</Text>
           {media && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginTop: 8,
-              }}
-            >
+            <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
               <MaterialCommunityIcons
                 name="file-check-outline"
                 size={18}
@@ -275,6 +305,14 @@ export default function ReportIncident({ navigation }) {
             </>
           )}
         </TouchableOpacity>
+
+        {/* ✅ Message Box */}
+        <MessageBox
+          visible={modalVisible}
+          type={modalType}
+          message={modalMessage}
+          onClose={() => setModalVisible(false)}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -351,4 +389,35 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   submitText: { color: "#fff", fontWeight: "700", fontSize: 18 },
+  // Modal styles
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    height: "100%",
+    width: "100%",
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
+  },
+  modalContainer: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 20,
+    alignItems: "center",
+    zIndex: 10000,
+  },
+  modalButton: {
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 15,
+    textAlign: "center",
+  },
 });

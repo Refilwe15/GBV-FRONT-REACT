@@ -93,7 +93,9 @@ async def sos_alert(location: Location):
 
 # ====== ROUTES ======
 @app.post("/upload-voice")
-async def upload_voice(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
+async def upload_voice(file: UploadFile = File(...), 
+                       phone: str = Form(...),
+                       db: AsyncSession = Depends(get_db)):
     try:
         # 1️⃣ Save file locally
         file_path = os.path.join(UPLOAD_DIR, file.filename)
@@ -128,7 +130,7 @@ async def upload_voice(file: UploadFile = File(...), db: AsyncSession = Depends(
         # 4️⃣ Send WhatsApp text via Twilio (no media)
         message = client.messages.create(
             from_=FROM_WHATSAPP,
-            to=TO_WHATSAPP,
+            to=f"whatsapp:{phone}",
             body=f"🚨 Stress detected!\nLevel: {stress_level}\nEnergy: {energy:.4f}\nPitch: {pitch:.2f} Hz"
         )
         print(f"✅ WhatsApp sent: {message.sid}")

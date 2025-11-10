@@ -8,7 +8,6 @@ import {
   Easing,
   Modal,
   TextInput,
-  Alert,
   Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
@@ -17,11 +16,52 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
 import ENV from "../.env";
 
+// ✅ Reusable MessageBox with purple theme
+const MessageBox = ({ visible, type, message, onClose }) => {
+  const iconColor =
+    type === "success"
+      ? "#A78BFA" // lighter purple
+      : type === "error"
+      ? "#9333EA" // purple-red for error
+      : "#8B5CF6"; // info purple
+
+  const iconName =
+    type === "success"
+      ? "check-circle"
+      : type === "error"
+      ? "times-circle"
+      : "info-circle";
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.modalBackground}>
+        <View style={styles.modalContainer}>
+          <View style={[styles.iconCircle, { backgroundColor: iconColor + "20" }]}>
+            <Icon name={iconName} size={48} color={iconColor} />
+          </View>
+          <Text style={styles.modalMessage}>{message}</Text>
+          <TouchableOpacity
+            style={[styles.modalButton, { backgroundColor: iconColor }]}
+            onPress={onClose}
+          >
+            <Text style={styles.modalButtonText}>OK</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 export default function Greet({ navigation }) {
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [pin, setPin] = useState("");
   const [reason, setReason] = useState("");
   const [recording, setRecording] = useState(null);
+
+  const [msgVisible, setMsgVisible] = useState(false);
+  const [msgType, setMsgType] = useState("info");
+  const [msgText, setMsgText] = useState("");
+
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -43,32 +83,48 @@ export default function Greet({ navigation }) {
     ).start();
   }, []);
 
+  const showMessage = (type, text) => {
+    setMsgType(type);
+    setMsgText(text);
+    setMsgVisible(true);
+  };
+
   // ===== NORMAL SOS =====
   const sendSOS = async (customMessage) => {
     try {
+      const userEmail = await AsyncStorage.getItem("email");
+      if (!userEmail) {
+        showMessage("error", "Please login to send SOS.");
+        return;
+      }
+
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permission Denied", "Enable location to send SOS.");
+        showMessage("error", "Enable location to send SOS.");
         return;
       }
 
       const location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
-      const phone =
-        (await AsyncStorage.getItem("emergency_contact")) || "+27763951934";
+      const phone = (await AsyncStorage.getItem("emergency_contact")) || "+27672531917";
 
       const message = customMessage || "SOS Alert! I need help!";
 
-      await fetch(`${ENV.BACKEND_URL}/contact`, {
+      const response = await fetch(`${ENV.BACKEND_URL}/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ latitude, longitude, phone, message }),
       });
 
-      Alert.alert("Success", "SOS sent successfully!");
+      if (response.ok) {
+        showMessage("success", "SOS sent successfully!");
+      } else {
+        const data = await response.json();
+        showMessage("error", data.detail || "Failed to send SOS.");
+      }
     } catch (err) {
       console.error("SOS Error:", err);
-      Alert.alert("Error", "Failed to send SOS. Try again.");
+      showMessage("error", "Failed to send SOS. Try again.");
     }
   };
 
@@ -76,33 +132,30 @@ export default function Greet({ navigation }) {
   const startRecording = async () => {
     try {
       if (Platform.OS === "web") {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mediaRecorder = new MediaRecorder(stream);
         mediaRecorder.chunks = [];
-        mediaRecorder.ondataavailable = (e) =>
-          mediaRecorder.chunks.push(e.data);
+        mediaRecorder.ondataavailable = (e) => mediaRecorder.chunks.push(e.data);
         mediaRecorder.onstop = async () => {
           const blob = new Blob(mediaRecorder.chunks, { type: "audio/webm" });
           await uploadRecording(blob);
         };
         mediaRecorder.start();
         setRecording(mediaRecorder);
+        showMessage("info", "Recording started...");
       } else {
         const permission = await Audio.requestPermissionsAsync();
         if (!permission.granted) {
-          Alert.alert("Microphone access denied");
+          showMessage("error", "Microphone access denied.");
           return;
         }
-        const { recording } = await Audio.Recording.createAsync(
-          Audio.RecordingOptionsPresets.HIGH_QUALITY
-        );
+        const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
         setRecording(recording);
+        showMessage("info", "Recording started...");
       }
     } catch (error) {
       console.error("Recording error:", error);
-      Alert.alert("Error", "Failed to start recording.");
+      showMessage("error", "Failed to start recording.");
     }
   };
 
@@ -119,8 +172,10 @@ export default function Greet({ navigation }) {
         await uploadRecording(file, true);
         setRecording(null);
       }
+      showMessage("success", "Recording stopped and sent successfully!");
     } catch (err) {
       console.error("Stop recording error:", err);
+      showMessage("error", "Failed to stop recording.");
     }
   };
 
@@ -131,8 +186,7 @@ export default function Greet({ navigation }) {
 
       const location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
-      const phone =
-        (await AsyncStorage.getItem("emergency_contact")) || "+27763951934";
+      const phone = (await AsyncStorage.getItem("emergency_contact")) || "+27672531917";
 
       const formData = new FormData();
       formData.append("latitude", latitude.toString());
@@ -140,42 +194,32 @@ export default function Greet({ navigation }) {
       formData.append("phone", phone);
 
       if (isMobile) {
-        formData.append("file", {
-          uri: audio.uri,
-          name: "sos_recording.m4a",
-          type: "audio/m4a",
-        });
+        formData.append("file", { uri: audio.uri, name: "sos_recording.m4a", type: "audio/m4a" });
       } else {
         formData.append("file", audio, "sos_recording.webm");
       }
 
       if (customMessage) formData.append("message", customMessage);
 
-      const response = await fetch(`${ENV.BACKEND_URL}/upload-voice`, {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(`${ENV.BACKEND_URL}/upload-voice`, { method: "POST", body: formData });
       const result = await response.json();
 
       if (response.ok) {
-        Alert.alert("Voice SOS Sent", "Your voice SOS was sent successfully!");
+        showMessage("success", "Voice SOS sent successfully!");
       } else {
         console.error("Upload failed:", result);
-        Alert.alert("Upload Failed", JSON.stringify(result));
+        showMessage("error", JSON.stringify(result));
       }
     } catch (err) {
       console.error("Upload error:", err);
-      Alert.alert(
-        "Error",
-        "Something went wrong while sending your voice SOS."
-      );
+      showMessage("error", "Failed to send voice SOS.");
     }
   };
 
   // ===== CANCEL SOS =====
   const handleCancelSubmit = async () => {
     if (!pin || !reason) {
-      Alert.alert("Missing Fields", "Please enter your PIN and a reason.");
+      showMessage("error", "Please enter your PIN and a reason.");
       return;
     }
 
@@ -196,20 +240,21 @@ export default function Greet({ navigation }) {
       setCancelModalVisible(false);
       setPin("");
       setReason("");
+
+      showMessage("success", "SOS request has been successfully cancelled!");
     } catch (err) {
       console.error("Cancel SOS Error:", err);
-      Alert.alert("Error", "Failed to send cancel SOS message.");
+      showMessage("error", "Failed to cancel SOS request.");
     }
   };
 
-  // ===== UI =====
   return (
     <View style={styles.container}>
       <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
         <TouchableOpacity
           style={[
             styles.sosButton,
-            { backgroundColor: recording ? "#991B1B" : "#EF4444" },
+            { backgroundColor: recording ? "#7C3AED" : "#8B5CF6" },
           ]}
           onPress={() => sendSOS()}
           onLongPress={startRecording}
@@ -218,36 +263,25 @@ export default function Greet({ navigation }) {
           activeOpacity={0.8}
         >
           <Icon name="exclamation-triangle" size={50} color="#fff" />
-          <Text style={styles.sosText}>
-            {recording ? "Recording..." : "SOS"}
-          </Text>
+          <Text style={styles.sosText}>{recording ? "Recording..." : "SOS"}</Text>
         </TouchableOpacity>
       </Animated.View>
 
       <Text style={styles.title}>
-        NO TO <Text style={{ color: "red" }}>GBV</Text>
+        NO TO <Text style={{ color: "#8B5CF6" }}>GBV</Text>
       </Text>
       <Text style={styles.subtitle}>An immediate, life-saving resource.</Text>
 
-      {/* Cancel SOS */}
       <TouchableOpacity
-        style={[styles.actionButton, { backgroundColor: "#F3F4F6" }]}
+        style={[styles.actionButton, { backgroundColor: "#EDE9FE" }]}
         onPress={() => setCancelModalVisible(true)}
       >
-        <Icon
-          name="times-circle"
-          size={18}
-          color="#111827"
-          style={styles.icon}
-        />
-        <Text style={[styles.actionText, { color: "#111827" }]}>
-          Cancel SOS
-        </Text>
+        <Icon name="times-circle" size={18} color="#7C3AED" style={styles.icon} />
+        <Text style={[styles.actionText, { color: "#7C3AED" }]}>Cancel SOS</Text>
       </TouchableOpacity>
 
-      {/* Login Button */}
       <TouchableOpacity
-        style={[styles.actionButton, { backgroundColor: "blue" }]}
+        style={[styles.actionButton, { backgroundColor: "#8B5CF6" }]}
         onPress={() => navigation.navigate("Login")}
       >
         <Icon name="sign-in" size={18} color="#fff" style={styles.icon} />
@@ -258,12 +292,7 @@ export default function Greet({ navigation }) {
       <Modal visible={cancelModalVisible} transparent animationType="fade">
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
-            <Icon
-              name="ban"
-              size={40}
-              color="#EF4444"
-              style={{ marginBottom: 10 }}
-            />
+            <Icon name="ban" size={40} color="#8B5CF6" style={{ marginBottom: 10 }} />
             <Text style={styles.modalTitle}>Cancel SOS Request</Text>
 
             <TextInput
@@ -285,15 +314,10 @@ export default function Greet({ navigation }) {
             />
 
             <TouchableOpacity
-              style={styles.submitButton}
+              style={[styles.submitButton, { backgroundColor: "#8B5CF6" }]}
               onPress={handleCancelSubmit}
             >
-              <Icon
-                name="check-circle"
-                size={18}
-                color="#fff"
-                style={styles.icon}
-              />
+              <Icon name="check-circle" size={18} color="#fff" style={styles.icon} />
               <Text style={styles.submitText}>Submit</Text>
             </TouchableOpacity>
 
@@ -301,37 +325,28 @@ export default function Greet({ navigation }) {
               style={[styles.closeButton, { marginTop: 10 }]}
               onPress={() => setCancelModalVisible(false)}
             >
-              <Icon
-                name="times"
-                size={18}
-                color="#EF4444"
-                style={styles.icon}
-              />
-              <Text style={styles.closeText}>Close</Text>
+              <Icon name="times" size={18} color="#8B5CF6" style={styles.icon} />
+              <Text style={[styles.closeText, { color: "#8B5CF6" }]}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Footer / Register */}
-      <Text style={styles.footer}>
-        Don’t have an account?{" "}
-        <Text
-          style={styles.link}
-          onPress={() => navigation.navigate("Register")}
-        >
-          Register here
-        </Text>
-      </Text>
+      {/* MessageBox */}
+      <MessageBox
+        visible={msgVisible}
+        type={msgType}
+        message={msgText}
+        onClose={() => setMsgVisible(false)}
+      />
     </View>
   );
 }
 
-// ===== Styles =====
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#F9F7FF",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
@@ -342,7 +357,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#EF4444",
+    shadowColor: "#8B5CF6",
     shadowOpacity: 0.5,
     shadowRadius: 15,
     elevation: 10,
@@ -374,25 +389,19 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: "center",
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 15,
-  },
+  modalTitle: { fontSize: 20, fontWeight: "700", color: "#111827", marginBottom: 15 },
   input: {
     width: "100%",
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: "#DDD6FE",
     borderRadius: 8,
     padding: 10,
     marginVertical: 6,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#F9F7FF",
   },
   submitButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "blue",
     paddingVertical: 12,
     borderRadius: 8,
     marginTop: 10,
@@ -401,7 +410,9 @@ const styles = StyleSheet.create({
   },
   submitText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
   closeButton: { flexDirection: "row", alignItems: "center" },
-  closeText: { color: "#EF4444", fontWeight: "bold", marginLeft: 5 },
-  footer: { marginTop: 25, fontSize: 14, color: "#374151" },
-  link: { color: "blue", fontWeight: "bold" },
+  closeText: { fontWeight: "bold", marginLeft: 5 },
+  iconCircle: { width: 80, height: 80, borderRadius: 40, justifyContent: "center", alignItems: "center", marginBottom: 15 },
+  modalMessage: { fontSize: 16, color: "#111827", textAlign: "center", marginVertical: 10 },
+  modalButton: { borderRadius: 8, paddingVertical: 10, paddingHorizontal: 25, marginTop: 10 },
+  modalButtonText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
 });

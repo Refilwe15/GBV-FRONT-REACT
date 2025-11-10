@@ -4,17 +4,21 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   StyleSheet,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-import Storage from "../utils/storage"; // make sure Storage has getItem, setItem, removeItem
+import Storage from "../utils/storage";
 
 export default function ContactPinSetup({ navigation }) {
   const [contact, setContact] = useState("");
   const [pin, setPin] = useState("");
+  const [message, setMessage] = useState(null);
 
-  // 🔁 Load saved contact and PIN on mount
+  const showMessage = (text, type = 'success') => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -24,78 +28,87 @@ export default function ContactPinSetup({ navigation }) {
         if (savedPin) setPin(savedPin);
       } catch (error) {
         console.log("Failed to load data:", error);
+        showMessage("Failed to load saved settings.", 'error');
       }
     };
     loadData();
   }, []);
 
-  // ✅ Validate and save contact
   const saveContact = async () => {
     const phoneRegex = /^\+\d{10,13}$/;
-
     if (!phoneRegex.test(contact)) {
-      Alert.alert(
-        "Invalid Number",
-        "Please include your country code (e.g. +27XXXXXXXXX)."
+      showMessage(
+        "Invalid Number: Please include your country code (e.g. +27XXXXXXXXX).",
+        'error'
       );
       return;
     }
-
     try {
       await Storage.setItem("emergency_contact", contact);
-      Alert.alert("Saved", "Your emergency contact has been saved!");
+      showMessage("Your emergency contact has been saved!", 'success');
     } catch (error) {
-      Alert.alert("Error", "Could not save your contact. Try again.");
-      console.error("Save contact error:", error);
+      showMessage("Could not save your contact. Try again.", 'error');
     }
   };
 
-  // ✅ Validate and save PIN
   const savePin = async () => {
-    const pinRegex = /^\d{4}$/; // 4-digit PIN
-
+    const pinRegex = /^\d{4}$/;
     if (!pinRegex.test(pin)) {
-      Alert.alert("Invalid PIN", "PIN must be exactly 4 digits.");
+      showMessage("Invalid PIN: PIN must be exactly 4 digits.", 'error');
       return;
     }
-
     try {
       await Storage.setItem("emergency_pin", pin);
-      Alert.alert("Saved", "Your emergency PIN has been saved!");
+      showMessage("Your emergency PIN has been saved!", 'success');
     } catch (error) {
-      Alert.alert("Error", "Could not save PIN. Try again.");
-      console.error("Save PIN error:", error);
+      showMessage("Could not save PIN. Try again.", 'error');
     }
   };
 
-  // 🗑️ Remove contact
   const clearContact = async () => {
     try {
       await Storage.removeItem("emergency_contact");
       setContact("");
-      Alert.alert("Removed", "Emergency contact removed.");
+      showMessage("Emergency contact removed.", 'success');
     } catch (error) {
-      console.log("Remove contact error:", error);
+      showMessage("Failed to remove contact.", 'error');
     }
   };
 
-  // 🗑️ Remove PIN
   const clearPin = async () => {
     try {
       await Storage.removeItem("emergency_pin");
       setPin("");
-      Alert.alert("Removed", "Emergency PIN removed.");
+      showMessage("Emergency PIN removed.", 'success');
     } catch (error) {
-      console.log("Remove PIN error:", error);
+      showMessage("Failed to remove PIN.", 'error');
     }
+  };
+
+  const MessageBox = () => {
+    if (!message) return null;
+    const isError = message.type === 'error';
+    const iconName = isError ? "exclamation-triangle" : "check-circle";
+
+    return (
+      <View style={[styles.messageBox, isError ? styles.messageBoxError : styles.messageBoxSuccess]}>
+        <Icon name={iconName} size={20} color="#fff" style={styles.messageIcon} />
+        <Text style={styles.messageText}>{message.text}</Text>
+      </View>
+    );
   };
 
   return (
     <View style={styles.container}>
-      <Icon name="phone" size={40} color="blue" style={{ marginBottom: 15 }} />
+      <MessageBox />
+
+      <View style={styles.iconContainer}>
+        <Icon name="phone" size={40} color="#7C3AED" />
+      </View>
+      
       <Text style={styles.title}>Set Emergency Contact & PIN</Text>
 
-      {/* Contact Input */}
+      <Text style={styles.label}>Emergency Contact Number</Text>
       <TextInput
         style={styles.input}
         placeholder="+27XXXXXXXXX"
@@ -104,26 +117,18 @@ export default function ContactPinSetup({ navigation }) {
         keyboardType="phone-pad"
         maxLength={13}
       />
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: "blue" }]}
-        onPress={saveContact}
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={[styles.button, { backgroundColor: "#7C3AED" }]} onPress={saveContact}>
         <Icon name="save" size={18} color="#fff" style={styles.icon} />
         <Text style={styles.buttonText}>Save Contact</Text>
       </TouchableOpacity>
       {contact ? (
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "#EF4444" }]}
-          onPress={clearContact}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={[styles.button, { backgroundColor: "#D946EF" }]} onPress={clearContact}>
           <Icon name="trash" size={18} color="#fff" style={styles.icon} />
           <Text style={styles.buttonText}>Remove Contact</Text>
         </TouchableOpacity>
       ) : null}
 
-      {/* PIN Input */}
+      <Text style={[styles.label, { marginTop: 15 }]}>4-Digit Emergency PIN</Text>
       <TextInput
         style={styles.input}
         placeholder="Enter 4-digit PIN"
@@ -133,33 +138,20 @@ export default function ContactPinSetup({ navigation }) {
         maxLength={4}
         secureTextEntry
       />
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: "#10B981" }]}
-        onPress={savePin}
-        activeOpacity={0.8}
-      >
-        <Icon name="save" size={18} color="#fff" style={styles.icon} />
+      <TouchableOpacity style={[styles.button, { backgroundColor: "#A78BFA" }]} onPress={savePin}>
+        <Icon name="lock" size={18} color="#fff" style={styles.icon} />
         <Text style={styles.buttonText}>Save PIN</Text>
       </TouchableOpacity>
       {pin ? (
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "#EF4444" }]}
-          onPress={clearPin}
-          activeOpacity={0.8}
-        >
-          <Icon name="trash" size={18} color="#fff" style={styles.icon} />
+        <TouchableOpacity style={[styles.button, { backgroundColor: "#D946EF" }]} onPress={clearPin}>
+          <Icon name="unlock" size={18} color="#fff" style={styles.icon} />
           <Text style={styles.buttonText}>Remove PIN</Text>
         </TouchableOpacity>
       ) : null}
 
-      {/* Back Button */}
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: "#F3F4F6" }]}
-        onPress={() => navigation.goBack()}
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={[styles.button, styles.backButton]} onPress={() => navigation.goBack()}>
         <Icon name="arrow-left" size={18} color="#111827" style={styles.icon} />
-        <Text style={[styles.buttonText, { color: "#111827" }]}>Back</Text>
+        <Text style={styles.backButtonText}>Back to Settings</Text>
       </TouchableOpacity>
     </View>
   );
@@ -168,38 +160,99 @@ export default function ContactPinSetup({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
-    justifyContent: "center",
+    backgroundColor: "#F5F3FF",
     alignItems: "center",
-    padding: 25,
+    padding: 24,
+    paddingTop: 60,
+  },
+  iconContainer: {
+    marginBottom: 25,
+    backgroundColor: '#EDE9FE',
+    borderRadius: 50,
+    padding: 15,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 20,
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#5B21B6",
+    marginBottom: 30,
     textAlign: "center",
   },
+  label: {
+    width: "100%",
+    textAlign: "left",
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6D28D9',
+  },
   input: {
-    width: "85%",
+    width: "100%",
     borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 8,
-    padding: 10,
+    borderColor: "#C4B5FD",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     backgroundColor: "#fff",
-    marginBottom: 12,
+    marginBottom: 16,
     fontSize: 16,
     textAlign: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   button: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 10,
-    paddingVertical: 14,
-    width: "85%",
+    borderRadius: 12,
+    paddingVertical: 16,
+    width: "100%",
     justifyContent: "center",
     marginVertical: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 6,
   },
-  icon: { marginRight: 8 },
-  buttonText: { fontSize: 16, fontWeight: "600", color: "#fff" },
+  backButton: {
+    backgroundColor: "#EDE9FE",
+    marginTop: 20,
+    shadowOpacity: 0.05,
+    elevation: 2,
+  },
+  icon: { marginRight: 10 },
+  buttonText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  backButtonText: { fontSize: 16, fontWeight: "700", color: "#5B21B6" },
+  messageBox: {
+    position: 'absolute',
+    top: 30,
+    zIndex: 10,
+    width: '90%',
+    padding: 15,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 10,
+  },
+  messageBoxSuccess: {
+    backgroundColor: '#7C3AED',
+  },
+  messageBoxError: {
+    backgroundColor: '#D946EF',
+  },
+  messageIcon: {
+    marginRight: 12,
+  },
+  messageText: {
+    color: '#fff',
+    fontWeight: '600',
+    flexShrink: 1,
+  },
 });

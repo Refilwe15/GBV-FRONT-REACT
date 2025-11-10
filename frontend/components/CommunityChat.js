@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://10.0.0.114:8000";
+const BASE_URL = "http://10.220.32.224:8000";
 const EMOJIS = [
   "😀",
   "😂",
@@ -184,7 +184,7 @@ export default function CommunityChat() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#E5DDD5" },
+  container: { flex: 1, backgroundColor: "#F5F3FF" }, // light purple background
   chatList: { flex: 1, paddingHorizontal: 10 },
   messageBox: {
     maxWidth: "75%",
@@ -194,24 +194,24 @@ const styles = StyleSheet.create({
   },
   messageLeft: {
     alignSelf: "flex-start",
-    backgroundColor: "#fff",
+    backgroundColor: "#EDE9FE", // light purple for others
     borderTopLeftRadius: 0,
   },
   messageRight: {
     alignSelf: "flex-end",
-    backgroundColor: "#0B93F6",
+    backgroundColor: "#8B5CF6", // strong purple for current user
     borderTopRightRadius: 0,
   },
   userEmail: {
     fontWeight: "700",
-    color: "#1F2937",
+    color: "#5B21B6", // dark purple
     marginBottom: 2,
     fontSize: 12,
   },
   messageText: { fontSize: 16, color: "#111" },
   timestamp: {
     fontSize: 10,
-    color: "#6B7280",
+    color: "#7C3AED", // purple for timestamp
     textAlign: "right",
     marginTop: 4,
   },
@@ -220,13 +220,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 10,
     borderTopWidth: 1,
-    borderColor: "#D1D5DB",
-    backgroundColor: "#F3F4F6",
+    borderColor: "#D8B4FE", // light purple border
+    backgroundColor: "#F3F0FF", // soft purple background
   },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: "#C4B5FD", // purple border
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     color: "#111",
   },
   sendBtn: {
-    backgroundColor: "#0B93F6",
+    backgroundColor: "#8B5CF6", // purple send button
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.4)",
   },
   emojiGrid: {
-    backgroundColor: "#fff",
+    backgroundColor: "#F5F3FF", // light purple modal
     padding: 12,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     marginTop: 10,
-    backgroundColor: "#0B93F6",
+    backgroundColor: "#8B5CF6", // purple close button
     padding: 10,
     borderRadius: 10,
     alignItems: "center",

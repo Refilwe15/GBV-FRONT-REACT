@@ -5,22 +5,80 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
+  Modal,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import Icon from "react-native-vector-icons/FontAwesome";
+import Icon from "react-native-vector-icons/FontAwesome5";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ENV from "../.env";
 
+// ✅ Reusable Message Modal
+const MessageBox = ({ visible, type, message, onClose }) => {
+  const iconName =
+    type === "success"
+      ? "check-circle"
+      : type === "error"
+      ? "times-circle"
+      : "info-circle";
+
+  const iconColor =
+    type === "success"
+      ? "#A78BFA" // purple-greenish for success
+      : type === "error"
+      ? "#C026D3" // pink-purple for error
+      : "#8B5CF6"; // info purple
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View
+            style={[
+              styles.iconCircle,
+              { backgroundColor: iconColor + "20" },
+            ]}
+          >
+            <Icon name={iconName} size={48} color={iconColor} />
+          </View>
+          <Text style={styles.modalMessage}>{message}</Text>
+          <TouchableOpacity
+            style={[styles.modalButton, { backgroundColor: iconColor }]}
+            onPress={onClose}
+          >
+            <Text style={styles.modalButtonText}>OK</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// ✅ Main Login Screen
 export default function Login({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState("info");
+  const [modalMessage, setModalMessage] = useState("");
+
+  const showMessage = (type, message) => {
+    setModalType(type);
+    setModalMessage(message);
+    setModalVisible(true);
+  };
+
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please enter both email and password.");
+      showMessage("error", "Please enter both email and password.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showMessage("error", "Please enter a valid email address.");
       return;
     }
 
@@ -34,25 +92,28 @@ export default function Login({ navigation }) {
       const data = await response.json();
 
       if (response.ok) {
-        // Store token & user type
         await AsyncStorage.setItem("token", data.access_token);
         await AsyncStorage.setItem("user_type", data.user_type);
         await AsyncStorage.setItem("email", data.email);
 
-        Alert.alert("Success", "Login successful!");
+        showMessage("success", "Login successful!");
 
-        // Navigate based on user type
-        if (data.user_type === "admin") {
-          navigation.replace("AdminDashboard"); // 👈 admin view
-        } else {
-          navigation.replace("Dashboard"); // 👈 normal user view
-        }
+        setTimeout(() => {
+          setModalVisible(false);
+          if (data.user_type === "admin") {
+            navigation.replace("AdminDashboard");
+          } else {
+            navigation.replace("Dashboard");
+          }
+        }, 1500);
+      } else if (data.detail?.toLowerCase().includes("invalid")) {
+        showMessage("error", "Invalid email or password.");
       } else {
-        Alert.alert("Login Failed", data.detail || "Check your credentials.");
+        showMessage("error", data.detail || "Login failed. Please try again.");
       }
     } catch (error) {
       console.error("Login Error:", error);
-      Alert.alert("Error", "Unable to connect to server.");
+      showMessage("error", "Unable to connect to server.");
     }
   };
 
@@ -68,7 +129,7 @@ export default function Login({ navigation }) {
 
       {/* Email Input */}
       <View style={styles.inputContainer}>
-        <Icon name="envelope" size={20} color="blue" style={styles.icon} />
+        <Icon name="envelope" size={18} color="#8B5CF6" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -82,7 +143,7 @@ export default function Login({ navigation }) {
 
       {/* Password Input */}
       <View style={styles.inputContainer}>
-        <Icon name="lock" size={20} color="blue" style={styles.icon} />
+        <Icon name="lock" size={18} color="#8B5CF6" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Password"
@@ -97,8 +158,8 @@ export default function Login({ navigation }) {
         >
           <Icon
             name={showPassword ? "eye" : "eye-slash"}
-            size={20}
-            color="blue"
+            size={18}
+            color="#8B5CF6"
           />
         </TouchableOpacity>
       </View>
@@ -111,8 +172,8 @@ export default function Login({ navigation }) {
       {/* Login Button */}
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Icon
-          name="sign-in"
-          size={20}
+          name="sign-in-alt"
+          size={18}
           color="#fff"
           style={{ marginRight: 8 }}
         />
@@ -126,27 +187,36 @@ export default function Login({ navigation }) {
           <Text style={styles.registerLink}> Register</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Modal */}
+      <MessageBox
+        visible={modalVisible}
+        type={modalType}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </KeyboardAvoidingView>
   );
 }
 
+// ✅ Purple themed styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 25,
     justifyContent: "center",
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#F3E8FF", // light purple
   },
   title: {
     fontSize: 32,
-    fontWeight: "bold",
-    color: "blue", // changed from purple to blue
-    marginBottom: 5,
+    fontWeight: "700",
+    color: "#6D28D9", // strong purple
+    marginBottom: 6,
     textAlign: "center",
   },
   caption: {
-    fontSize: 14,
-    color: "black", // changed from gray to black
+    fontSize: 15,
+    color: "#6B21A8", // dark purple
     marginBottom: 30,
     textAlign: "center",
   },
@@ -154,15 +224,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: "#D8B4FE", // light purple border
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 15,
     backgroundColor: "#fff",
-    shadowColor: "blue", // changed from purple to blue
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
     elevation: 2,
   },
   icon: {
@@ -174,23 +244,24 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 50,
-    color: "black", // changed text color to black
+    color: "#4C1D95", // deep purple text
+    fontSize: 15,
   },
   forgot: {
-    color: "blue", // changed from purple to blue
+    color: "#8B5CF6",
     textAlign: "right",
     marginBottom: 25,
     fontWeight: "600",
   },
   button: {
     flexDirection: "row",
-    backgroundColor: "blue", // changed from purple to blue
+    backgroundColor: "#7C3AED", // purple button
     padding: 16,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
-    shadowColor: "blue", // changed from purple to blue
+    shadowColor: "#7C3AED",
     shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 5,
@@ -205,10 +276,53 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   registerText: {
-    color: "black", // changed from gray to black
+    color: "#4C1D95",
   },
   registerLink: {
-    color: "blue", // changed from purple to blue
+    color: "#7C3AED",
     fontWeight: "bold",
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: "80%",
+    backgroundColor: "#F3E8FF",
+    borderRadius: 18,
+    padding: 25,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: "#4C1D95",
+    textAlign: "center",
+    marginVertical: 10,
+  },
+  modalButton: {
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    marginTop: 10,
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 15,
   },
 });
