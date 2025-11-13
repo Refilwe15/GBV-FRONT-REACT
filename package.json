@@ -11,6 +11,7 @@
     "dev": "expo start",
     "build": "expo export --platform web",
     "build:web": "expo export --platform web",
+    "vercel-build": "expo export --platform web",
     "build:android": "expo build:android",
     "build:ios": "expo build:ios",
     "prebuild": "expo prebuild",
