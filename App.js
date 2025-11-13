@@ -1,50 +1,29 @@
-import React from "react";
-import { StatusBar } from "expo-status-bar";
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-
-// Import screens
-import Greet from "./components/Greet";
-import Login from "./components/Login";
-import Register from "./components/Register";
-import Dashboard from "./components/Dashboard";
-import ReportIncident from "./components/ReportIncident"; // ✅ Import the new Report screen
-
-const Stack = createNativeStackNavigator();
-
-export default function App() {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Greet">
-        <Stack.Screen
-          name="Greet"
-          component={Greet}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Login"
-          component={Login}
-          options={{ title: "Login" }}
-        />
-        <Stack.Screen
-          name="Register"
-          component={Register}
-          options={{ title: "Register" }}
-        />
-        <Stack.Screen
-          name="Dashboard"
-          component={Dashboard}
-          options={{ title: "Dashboard", headerLeft: () => null }}
-        />
-
-        {/*  Add ReportIncident route */}
-        <Stack.Screen
-          name="Report"
-          component={ReportIncident}
-          options={{ title: "Report Incident" }}
-        />
-      </Stack.Navigator>
-      <StatusBar style="auto" />
-    </NavigationContainer>
-  );
+{
+  "expo": {
+    "name": "GBV-FRONT-REACT",
+    "slug": "GBV-FRONT-REACT",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
 }
