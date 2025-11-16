@@ -5,12 +5,12 @@
   "installCommand": "npm install",
   "devCommand": "npm run web",
   "env": {
-    "EXPO_USE_FAST_RESOLVER": "true",
+    "EXPO_USE_FAST_RESOLVER": "1",
     "NODE_ENV": "production"
   },
-  "build": {
-    "env": {
-      "EXPO_NO_TELEMETRY": "1"
+  "functions": {
+    "**/*.js": {
+      "maxDuration": 30
     }
   },
   "routes": [
