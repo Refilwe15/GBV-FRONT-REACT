@@ -13,6 +13,11 @@
     },
     "production": {
       "autoIncrement": true
+    },
+    "web": {
+      "environment": {
+        "ENABLE_EXPERIMENTAL_COREPACK": "1"
+      }
     }
   },
   "submit": {
