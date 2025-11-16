@@ -8,13 +8,14 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "build": "expo build:web",
+    "build": "expo export --platform web",
     "vercel-build": "npx expo export --platform web",
     "prebuild": "expo prebuild",
-    "export-web": "npx expo export --platform web --dev"
+    "export-web": "EXPO_USE_FAST_RESOLVER=1 npx expo export --platform web"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
+    "@expo/webpack-config": "^19.0.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/masked-view": "^0.1.11",
     "@react-navigation/drawer": "^7.7.2",
