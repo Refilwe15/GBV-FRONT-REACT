@@ -10,8 +10,7 @@
     "web": "expo start --web",
     "build": "expo export --platform web",
     "vercel-build": "EXPO_USE_FAST_RESOLVER=1 npx expo export --platform web",
-    "prebuild": "expo prebuild --clean",
-    "export-web": "EXPO_USE_FAST_RESOLVER=1 npx expo export --platform web"
+    "prebuild": "expo prebuild --clean"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
