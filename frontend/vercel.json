@@ -9,5 +9,14 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ]
+  ],
+  "env": {
+    "EXPO_USE_FAST_RESOLVER": "true"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production",
+      "EXPO_NO_TELEMETRY": "1"
+    }
+  }
 }
