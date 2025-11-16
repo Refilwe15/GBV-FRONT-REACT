@@ -4,19 +4,19 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "devCommand": "npm run web",
+  "env": {
+    "EXPO_USE_FAST_RESOLVER": "true",
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "EXPO_NO_TELEMETRY": "1"
+    }
+  },
   "routes": [
     {
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "env": {
-    "EXPO_USE_FAST_RESOLVER": "true"
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production",
-      "EXPO_NO_TELEMETRY": "1"
-    }
-  }
+  ]
 }
