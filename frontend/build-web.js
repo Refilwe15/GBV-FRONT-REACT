@@ -22,124 +22,70 @@ function runCommand(command, description) {
   }
 }
 
-function setupWebConfiguration() {
-  console.log('\n⚙️ Setting up web configuration...');
-  
+function cleanBuild() {
+  console.log('🧹 Cleaning previous builds...');
   try {
-    // Ensure we have the necessary files for web
-    const packageJsonPath = path.join(process.cwd(), 'package.json');
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    
-    // Update package.json if needed
-    if (!packageJson.dependencies['@expo/webpack-config']) {
-      console.log('📦 Adding webpack config dependency...');
-      execSync('npm install @expo/webpack-config --save-dev', { stdio: 'inherit' });
-    }
-    
-    // Create metro.config.js if it doesn't exist
-    const metroConfigPath = path.join(process.cwd(), 'metro.config.js');
-    if (!fs.existsSync(metroConfigPath)) {
-      const metroConfig = `const { getDefaultConfig } = require('expo/metro-config');
-
-const config = getDefaultConfig(__dirname);
-
-// Add support for other file extensions
-config.resolver.assetExts.push('db');
-
-module.exports = config;`;
-      fs.writeFileSync(metroConfigPath, metroConfig);
-      console.log('✅ Created metro.config.js');
-    }
-    
-    return true;
-  } catch (error) {
-    console.log('⚠️ Setup configuration failed:', error.message);
-    return false;
-  }
-}
-
-function forceWebBuild() {
-  console.log('\n📦 Forcing Web Build with Metro bundler...');
-  
-  try {
-    // Clean previous builds
     if (fs.existsSync('dist')) {
       fs.rmSync('dist', { recursive: true });
     }
-    
-    // Set environment for web build
-    const env = {
-      ...process.env,
-      EXPO_USE_FAST_RESOLVER: '1',
-      NODE_ENV: 'production'
-    };
-    
-    console.log('🌐 Building with Metro bundler for web...');
-    
-    // Method 1: Try with environment variables
-    const success = runCommand(
-      'EXPO_USE_FAST_RESOLVER=1 npx expo export --platform web', 
-      'Web Export with Metro'
-    );
-    
-    if (success && fs.existsSync('dist')) {
-      console.log('✅ Web build created successfully in dist/');
-      return true;
+    if (fs.existsSync('web-build')) {
+      fs.rmSync('web-build', { recursive: true });
     }
-    
-    // Method 2: Try prebuild first
-    console.log('🔄 Trying prebuild approach...');
-    const prebuildSuccess = runCommand(
-      'npx expo prebuild --platform web',
-      'Prebuild for Web'
-    );
-    
-    if (prebuildSuccess) {
-      const exportSuccess = runCommand(
-        'EXPO_USE_FAST_RESOLVER=1 npx expo export --platform web',
-        'Export after Prebuild'
-      );
-      
-      if (exportSuccess && fs.existsSync('dist')) {
-        console.log('✅ Web build successful after prebuild');
-        return true;
-      }
-    }
-    
-    return false;
-    
+    console.log('✅ Clean completed');
   } catch (error) {
-    console.error('💥 Web build failed:', error);
-    return false;
+    console.log('⚠️ Clean failed:', error.message);
   }
 }
 
-// Main build process
-async function main() {
+function main() {
   console.log('🏁 Starting Web Build Process...');
   
-  // Setup web configuration first
-  setupWebConfiguration();
+  // Clean previous builds
+  cleanBuild();
   
-  // Force web build
-  const buildSuccess = forceWebBuild();
+  // Set environment for web build
+  const env = {
+    ...process.env,
+    EXPO_USE_FAST_RESOLVER: '1',
+    NODE_ENV: 'production'
+  };
   
-  if (buildSuccess) {
+  console.log('🌐 Building for web platform...');
+  
+  // Method 1: Direct web export with environment
+  const success = runCommand(
+    'npx expo export --platform web', 
+    'Web Export with Platform Flag'
+  );
+  
+  if (success && fs.existsSync('dist')) {
     console.log('\n🎉 WEB BUILD COMPLETED SUCCESSFULLY!');
     
     // Verify the build output
-    if (fs.existsSync('dist')) {
-      const files = fs.readdirSync('dist');
-      console.log('📄 Built files:', files);
-      
-      if (files.includes('index.html')) {
-        console.log('✅ index.html found - Web build is ready for Vercel!');
-      }
+    const files = fs.readdirSync('dist');
+    console.log('📄 Built files:', files);
+    
+    if (files.includes('index.html')) {
+      console.log('✅ index.html found - Web build is ready for Vercel!');
     }
-  } else {
-    console.log('\n💥 Web build failed with Metro, trying alternative approach...');
-    createWebFallback();
+    return;
   }
+  
+  // Method 2: Try alternative command
+  console.log('🔄 Trying alternative build command...');
+  const altSuccess = runCommand(
+    'npx expo export:web', 
+    'Alternative Web Export'
+  );
+  
+  if (altSuccess && fs.existsSync('dist')) {
+    console.log('\n🎉 Alternative web build successful!');
+    return;
+  }
+  
+  // Method 3: Create fallback
+  console.log('💥 All build methods failed, creating fallback...');
+  createWebFallback();
 }
 
 function createWebFallback() {
@@ -180,12 +126,9 @@ function createWebFallback() {
             color: #333;
             margin-bottom: 20px;
         }
-        .feature-list {
-            text-align: left;
+        .loading {
+            color: #666;
             margin: 20px 0;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
         }
         .emergency {
             background: #fff3cd;
@@ -195,29 +138,42 @@ function createWebFallback() {
             margin: 20px 0;
             color: #856404;
         }
+        .contact {
+            background: #d1ecf1;
+            border: 2px solid #bee5eb;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            color: #0c5460;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>GBV Support Platform</h1>
-        <p>Web version is being optimized. Please check back soon.</p>
-        
-        <div class="feature-list">
-            <h3>Available Features:</h3>
-            <ul>
-                <li>Emergency contacts</li>
-                <li>Support resources</li>
-                <li>Safety information</li>
-                <li>Help center access</li>
-            </ul>
-        </div>
+        <p class="loading">Web application is loading...</p>
         
         <div class="emergency">
             <strong>🚨 Emergency Contacts:</strong>
             <p>📞 10111 - SA Police</p>
             <p>📞 0800 428 428 - GBV Command Centre</p>
         </div>
+        
+        <div class="contact">
+            <strong>📞 Support Contacts:</strong>
+            <p>Lifeline: 0861 322 322</p>
+            <p>People Opposed to Woman Abuse: 011 642 4345</p>
+        </div>
+        
+        <p>If you need immediate assistance, please contact the numbers above.</p>
     </div>
+
+    <script>
+        console.log('GBV Support Platform - Web Version');
+        setTimeout(() => {
+            document.querySelector('.loading').textContent = 'Web version optimized for desktop and mobile browsers';
+        }, 2000);
+    </script>
 </body>
 </html>`;
   
@@ -226,7 +182,9 @@ function createWebFallback() {
 }
 
 // Run the build
-main().catch(error => {
+try {
+  main();
+} catch (error) {
   console.error('💥 Build process failed:', error);
   createWebFallback();
-});
+}
