@@ -4,13 +4,14 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "expo start",
+    "start": "expo start --web",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "build": "node build-web.js",
-    "vercel-build": "node build-web.js",
-    "prebuild": "expo prebuild"
+    "build": "expo build:web",
+    "vercel-build": "npx expo export --platform web",
+    "prebuild": "expo prebuild",
+    "export-web": "npx expo export --platform web --dev"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -46,6 +47,7 @@
   },
   "private": true,
   "devDependencies": {
+    "@babel/core": "^7.20.0",
     "@types/react": "~19.1.10",
     "eas-cli": "^16.26.0",
     "typescript": "~5.9.2"
