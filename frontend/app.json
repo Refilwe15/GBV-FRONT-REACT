@@ -24,12 +24,16 @@
       "package": "com.sambokksicelo.GBVFRONTREACT"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "webpack"
     },
     "extra": {
       "eas": {
         "projectId": "1d016733-4f34-45d1-be2d-fa57fd98552a"
       }
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
