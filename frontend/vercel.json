@@ -2,16 +2,11 @@
   "version": 2,
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "dist",
-  "installCommand": "npm install",
+  "installCommand": "npm install --legacy-peer-deps",
   "devCommand": "npm run web",
   "env": {
     "EXPO_USE_FAST_RESOLVER": "1",
     "NODE_ENV": "production"
-  },
-  "functions": {
-    "**/*.js": {
-      "maxDuration": 30
-    }
   },
   "routes": [
     {
