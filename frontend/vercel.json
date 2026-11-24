@@ -1,17 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "npm run vercel-build",
+  "buildCommand": "npx expo export --platform web",
   "outputDirectory": "dist",
-  "installCommand": "rm -rf node_modules package-lock.json && npm install --legacy-peer-deps && npm install react-native-worklets-core && npm install",
-  "devCommand": "npm run start",
-  "env": {
-    "EXPO_USE_FAST_RESOLVER": "1",
-    "NODE_ENV": "production"
-  },
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": null,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
