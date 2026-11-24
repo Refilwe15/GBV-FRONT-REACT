@@ -25,3 +25,4 @@ backend/uploads/
 frontend/dist/
 frontend/.expo/
 frontend/web-build/
+backend/render-env.example
