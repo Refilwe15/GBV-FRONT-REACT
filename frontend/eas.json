@@ -9,14 +9,15 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
-      "autoIncrement": true
-    },
-    "web": {
-      "environment": {
-        "ENABLE_EXPERIMENTAL_COREPACK": "1"
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
       }
     }
   },
