@@ -1,0 +1,287 @@
+import React, { useState, useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
+  SafeAreaView,
+  StyleSheet,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
+import Storage from "../utils/storage";
+import ENV from "../.env";
+
+const EMOJIS = [
+  "😀",
+  "😂",
+  "😍",
+  "🥰",
+  "😎",
+  "😭",
+  "😡",
+  "👍",
+  "👎",
+  "🙏",
+  "🎉",
+  "💯",
+];
+
+export default function CommunityChat() {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [emojiModal, setEmojiModal] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [status, setStatus] = useState("");
+  const flatListRef = useRef();
+
+  useEffect(() => {
+    const fetchEmail = async () => {
+      const email = await Storage.getItem("email");
+      if (email) setUserEmail(email);
+      else setStatus("Please log in to send messages.");
+    };
+    fetchEmail();
+  }, []);
+
+  const fetchMessages = async () => {
+    try {
+      const res = await fetch(`${ENV.BACKEND_URL}/chat/`);
+      if (!res.ok) throw new Error(`Server error (${res.status})`);
+      const data = await res.json();
+      if (Array.isArray(data)) setMessages(data);
+    } catch (err) {
+      console.log(err.message);
+      setStatus("Unable to load chat. Check your connection.");
+    }
+  };
+
+  useEffect(() => {
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (messages.length && flatListRef.current) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
+
+  const sendMessage = async () => {
+    const content = input.trim();
+    if (!content) return;
+
+    if (!userEmail) {
+      setStatus("Please log in to send messages.");
+      return;
+    }
+
+    try {
+      setStatus("");
+      const res = await fetch(`${ENV.BACKEND_URL}/chat/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_email: userEmail, content }),
+      });
+      if (!res.ok) throw new Error("Failed to send message");
+      setInput("");
+      await fetchMessages();
+    } catch (err) {
+      console.log(err.message);
+      setStatus("Failed to send message. Try again.");
+    }
+  };
+
+  const addEmoji = (emoji) => {
+    setInput((prev) => prev + emoji);
+    setEmojiModal(false);
+  };
+
+  const renderMessage = ({ item }) => {
+    const isCurrentUser = item.user_email === userEmail;
+    return (
+      <View
+        style={[
+          styles.messageBox,
+          isCurrentUser ? styles.messageRight : styles.messageLeft,
+        ]}
+      >
+        {!isCurrentUser && (
+          <Text style={styles.userEmail}>{item.user_email}</Text>
+        )}
+        <Text style={[styles.messageText, isCurrentUser && { color: "#fff" }]}>
+          {item.content}
+        </Text>
+        <Text style={[styles.timestamp, isCurrentUser && { color: "#D1D5DB" }]}>
+          {item.created_at
+            ? new Date(item.created_at).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : ""}
+        </Text>
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        {!!status && <Text style={styles.statusText}>{status}</Text>}
+
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderMessage}
+          style={styles.chatList}
+          contentContainerStyle={{ paddingVertical: 10 }}
+        />
+
+        <Modal visible={emojiModal} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.emojiGrid}>
+              <ScrollView
+                contentContainerStyle={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                }}
+              >
+                {EMOJIS.map((e) => (
+                  <TouchableOpacity
+                    key={e}
+                    onPress={() => addEmoji(e)}
+                    style={styles.emojiBtn}
+                  >
+                    <Text style={{ fontSize: 28 }}>{e}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <TouchableOpacity
+                onPress={() => setEmojiModal(false)}
+                style={styles.closeBtn}
+              >
+                <Text style={{ color: "#fff", fontWeight: "700" }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        <View style={styles.inputContainer}>
+          <TouchableOpacity onPress={() => setEmojiModal(true)}>
+            <Text style={styles.emojiToggle}>😊</Text>
+          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Type a message..."
+            placeholderTextColor="#9CA3AF"
+            onSubmitEditing={sendMessage}
+          />
+          <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
+            <Text style={{ color: "#fff", fontWeight: "700" }}>Send</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#F5F3FF" },
+  statusText: {
+    textAlign: "center",
+    color: "#7C3AED",
+    paddingVertical: 8,
+    backgroundColor: "#EDE9FE",
+    fontWeight: "600",
+  },
+  chatList: { flex: 1, paddingHorizontal: 10 },
+  messageBox: {
+    maxWidth: "75%",
+    padding: 10,
+    marginVertical: 4,
+    borderRadius: 16,
+  },
+  messageLeft: {
+    alignSelf: "flex-start",
+    backgroundColor: "#EDE9FE",
+    borderTopLeftRadius: 0,
+  },
+  messageRight: {
+    alignSelf: "flex-end",
+    backgroundColor: "#8B5CF6",
+    borderTopRightRadius: 0,
+  },
+  userEmail: {
+    fontWeight: "700",
+    color: "#5B21B6",
+    marginBottom: 2,
+    fontSize: 12,
+  },
+  messageText: { fontSize: 16, color: "#111" },
+  timestamp: {
+    fontSize: 10,
+    color: "#7C3AED",
+    textAlign: "right",
+    marginTop: 4,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    borderTopWidth: 1,
+    borderColor: "#D8B4FE",
+    backgroundColor: "#F3F0FF",
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#C4B5FD",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginHorizontal: 8,
+    backgroundColor: "#fff",
+    color: "#111",
+  },
+  sendBtn: {
+    backgroundColor: "#8B5CF6",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  emojiToggle: { fontSize: 28 },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  emojiGrid: {
+    backgroundColor: "#F5F3FF",
+    padding: 12,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  emojiBtn: {
+    width: "12%",
+    padding: 6,
+    alignItems: "center",
+    marginVertical: 5,
+  },
+  closeBtn: {
+    marginTop: 10,
+    backgroundColor: "#8B5CF6",
+    padding: 10,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+});
