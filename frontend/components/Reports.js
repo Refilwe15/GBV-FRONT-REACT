@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ENV from "../.env";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import Storage from "../utils/storage";
 
 // ✅ Reusable modal component
 const MessageBox = ({ visible, type, message, onClose }) => {
@@ -88,7 +88,7 @@ export default function Reports() {
     setLoading(true);
 
     try {
-      const email = await AsyncStorage.getItem("email");
+      const email = await Storage.getItem("email");
 
       if (!email) {
         showMessage("error", "You are not logged in. Please log in to view your reports.");

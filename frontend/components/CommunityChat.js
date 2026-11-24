@@ -12,9 +12,9 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import Storage from "../utils/storage";
+import ENV from "../.env";
 
-const BASE_URL = "http://10.220.32.224:8000";
 const EMOJIS = [
   "😀",
   "😂",
@@ -35,25 +35,27 @@ export default function CommunityChat() {
   const [input, setInput] = useState("");
   const [emojiModal, setEmojiModal] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [status, setStatus] = useState("");
   const flatListRef = useRef();
 
-  // Fetch logged-in user email from AsyncStorage
   useEffect(() => {
     const fetchEmail = async () => {
-      const email = await AsyncStorage.getItem("email");
+      const email = await Storage.getItem("email");
       if (email) setUserEmail(email);
+      else setStatus("Please log in to send messages.");
     };
     fetchEmail();
   }, []);
 
-  // Fetch messages from server
   const fetchMessages = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/chat/`);
+      const res = await fetch(`${ENV.BACKEND_URL}/chat/`);
+      if (!res.ok) throw new Error(`Server error (${res.status})`);
       const data = await res.json();
-      setMessages(data);
+      if (Array.isArray(data)) setMessages(data);
     } catch (err) {
       console.log(err.message);
+      setStatus("Unable to load chat. Check your connection.");
     }
   };
 
@@ -63,27 +65,34 @@ export default function CommunityChat() {
     return () => clearInterval(interval);
   }, []);
 
-  // Scroll to bottom whenever messages update
   useEffect(() => {
     if (messages.length && flatListRef.current) {
       flatListRef.current.scrollToEnd({ animated: true });
     }
   }, [messages]);
 
-  // Send message
   const sendMessage = async () => {
-    if (!input.trim() || !userEmail) return;
+    const content = input.trim();
+    if (!content) return;
+
+    if (!userEmail) {
+      setStatus("Please log in to send messages.");
+      return;
+    }
+
     try {
-      const res = await fetch(`${BASE_URL}/chat/`, {
+      setStatus("");
+      const res = await fetch(`${ENV.BACKEND_URL}/chat/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_email: userEmail, content: input }),
+        body: JSON.stringify({ user_email: userEmail, content }),
       });
       if (!res.ok) throw new Error("Failed to send message");
       setInput("");
-      fetchMessages();
+      await fetchMessages();
     } catch (err) {
       console.log(err.message);
+      setStatus("Failed to send message. Try again.");
     }
   };
 
@@ -108,10 +117,12 @@ export default function CommunityChat() {
           {item.content}
         </Text>
         <Text style={[styles.timestamp, isCurrentUser && { color: "#D1D5DB" }]}>
-          {new Date(item.created_at).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          {item.created_at
+            ? new Date(item.created_at).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : ""}
         </Text>
       </View>
     );
@@ -123,16 +134,17 @@ export default function CommunityChat() {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
+        {!!status && <Text style={styles.statusText}>{status}</Text>}
+
         <FlatList
           ref={flatListRef}
           data={messages}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => String(item.id)}
           renderItem={renderMessage}
           style={styles.chatList}
           contentContainerStyle={{ paddingVertical: 10 }}
         />
 
-        {/* Emoji Modal */}
         <Modal visible={emojiModal} transparent animationType="slide">
           <View style={styles.modalOverlay}>
             <View style={styles.emojiGrid}>
@@ -162,7 +174,6 @@ export default function CommunityChat() {
           </View>
         </Modal>
 
-        {/* Input */}
         <View style={styles.inputContainer}>
           <TouchableOpacity onPress={() => setEmojiModal(true)}>
             <Text style={styles.emojiToggle}>😊</Text>
@@ -173,6 +184,7 @@ export default function CommunityChat() {
             onChangeText={setInput}
             placeholder="Type a message..."
             placeholderTextColor="#9CA3AF"
+            onSubmitEditing={sendMessage}
           />
           <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
             <Text style={{ color: "#fff", fontWeight: "700" }}>Send</Text>
@@ -184,7 +196,14 @@ export default function CommunityChat() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F3FF" }, // light purple background
+  container: { flex: 1, backgroundColor: "#F5F3FF" },
+  statusText: {
+    textAlign: "center",
+    color: "#7C3AED",
+    paddingVertical: 8,
+    backgroundColor: "#EDE9FE",
+    fontWeight: "600",
+  },
   chatList: { flex: 1, paddingHorizontal: 10 },
   messageBox: {
     maxWidth: "75%",
@@ -194,24 +213,24 @@ const styles = StyleSheet.create({
   },
   messageLeft: {
     alignSelf: "flex-start",
-    backgroundColor: "#EDE9FE", // light purple for others
+    backgroundColor: "#EDE9FE",
     borderTopLeftRadius: 0,
   },
   messageRight: {
     alignSelf: "flex-end",
-    backgroundColor: "#8B5CF6", // strong purple for current user
+    backgroundColor: "#8B5CF6",
     borderTopRightRadius: 0,
   },
   userEmail: {
     fontWeight: "700",
-    color: "#5B21B6", // dark purple
+    color: "#5B21B6",
     marginBottom: 2,
     fontSize: 12,
   },
   messageText: { fontSize: 16, color: "#111" },
   timestamp: {
     fontSize: 10,
-    color: "#7C3AED", // purple for timestamp
+    color: "#7C3AED",
     textAlign: "right",
     marginTop: 4,
   },
@@ -220,13 +239,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 10,
     borderTopWidth: 1,
-    borderColor: "#D8B4FE", // light purple border
-    backgroundColor: "#F3F0FF", // soft purple background
+    borderColor: "#D8B4FE",
+    backgroundColor: "#F3F0FF",
   },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#C4B5FD", // purple border
+    borderColor: "#C4B5FD",
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -235,7 +254,7 @@ const styles = StyleSheet.create({
     color: "#111",
   },
   sendBtn: {
-    backgroundColor: "#8B5CF6", // purple send button
+    backgroundColor: "#8B5CF6",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -247,7 +266,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.4)",
   },
   emojiGrid: {
-    backgroundColor: "#F5F3FF", // light purple modal
+    backgroundColor: "#F5F3FF",
     padding: 12,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
@@ -260,7 +279,7 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     marginTop: 10,
-    backgroundColor: "#8B5CF6", // purple close button
+    backgroundColor: "#8B5CF6",
     padding: 10,
     borderRadius: 10,
     alignItems: "center",

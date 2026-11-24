@@ -46,6 +46,13 @@ export default function Dashboard({ navigation }) {
       color: "#6D28D9",
       screen: "CommunityChat",
     },
+    {
+      id: 6,
+      title: "Support Chatbot",
+      icon: "comments-o",
+      color: "#5B21B6",
+      screen: "ChatbotScreen",
+    },
   ];
 
   const handleFeaturePress = (item) => {

@@ -17,7 +17,7 @@ export default function ChatbotScreen() {
   const [messages, setMessages] = useState([
     {
       id: "1",
-      text: "Hi 👋 I’m your assistant. How can I help you today?",
+      text: "Hi — I'm your support assistant. How can I help you today?",
       sender: "bot",
     },
   ]);
@@ -26,11 +26,12 @@ export default function ChatbotScreen() {
   const flatListRef = useRef(null);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    const text = input.trim();
+    if (!text || loading) return;
 
     const userMessage = {
-      id: Date.now().toString(),
-      text: input,
+      id: `${Date.now()}-user`,
+      text,
       sender: "user",
     };
     setMessages((prev) => [...prev, userMessage]);
@@ -38,16 +39,18 @@ export default function ChatbotScreen() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${ENV.BACKEND_URL}/support-chatbot`, {
+      const response = await fetch(`${ENV.BACKEND_URL}/support-chatbot/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ message: text }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       const botMessage = {
-        id: Date.now().toString(),
-        text: data.reply || "Sorry, I didn’t understand that.",
+        id: `${Date.now()}-bot`,
+        text:
+          data.reply ||
+          "Sorry, I couldn't process that right now. Please try again.",
         sender: "bot",
       };
       setMessages((prev) => [...prev, botMessage]);
@@ -55,8 +58,8 @@ export default function ChatbotScreen() {
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
-          text: "⚠️ Error connecting to server.",
+          id: `${Date.now()}-err`,
+          text: "Error connecting to server. Please check that the backend is running.",
           sender: "bot",
         },
       ]);
@@ -108,7 +111,7 @@ export default function ChatbotScreen() {
 
       {loading && (
         <View style={styles.typingIndicator}>
-          <ActivityIndicator size="small" color="#007AFF" />
+          <ActivityIndicator size="small" color="#7C3AED" />
           <Text style={styles.typingText}>Assistant is typing...</Text>
         </View>
       )}
@@ -120,8 +123,13 @@ export default function ChatbotScreen() {
           value={input}
           onChangeText={setInput}
           onSubmitEditing={sendMessage}
+          editable={!loading}
         />
-        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+        <TouchableOpacity
+          style={[styles.sendButton, loading && { opacity: 0.6 }]}
+          onPress={sendMessage}
+          disabled={loading}
+        >
           <Ionicons name="send" size={22} color="white" />
         </TouchableOpacity>
       </View>
@@ -139,7 +147,7 @@ const styles = StyleSheet.create({
     marginVertical: 6,
   },
   userMessage: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#7C3AED",
     alignSelf: "flex-end",
     borderBottomRightRadius: 4,
   },
@@ -167,7 +175,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   sendButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#7C3AED",
     borderRadius: 50,
     padding: 10,
     marginLeft: 8,

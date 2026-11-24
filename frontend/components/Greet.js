@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import * as Location from "expo-location";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import Storage from "../utils/storage";
 import { Audio } from "expo-av";
 import ENV from "../.env";
 
@@ -92,22 +92,24 @@ export default function Greet({ navigation }) {
   // ===== NORMAL SOS =====
   const sendSOS = async (customMessage) => {
     try {
-      const userEmail = await AsyncStorage.getItem("email");
-      if (!userEmail) {
-        showMessage("error", "Please login to send SOS.");
-        return;
+      let latitude = 0;
+      let longitude = 0;
+
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === "granted") {
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          latitude = location.coords.latitude;
+          longitude = location.coords.longitude;
+        }
+      } catch (locErr) {
+        console.warn("Location unavailable, sending SOS without GPS:", locErr);
       }
 
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        showMessage("error", "Enable location to send SOS.");
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
-      const phone = (await AsyncStorage.getItem("emergency_contact")) || "+27672531917";
-
+      const phone =
+        (await Storage.getItem("emergency_contact")) || "+27763951934";
       const message = customMessage || "SOS Alert! I need help!";
 
       const response = await fetch(`${ENV.BACKEND_URL}/contact`, {
@@ -116,10 +118,14 @@ export default function Greet({ navigation }) {
         body: JSON.stringify({ latitude, longitude, phone, message }),
       });
 
+      const data = await response.json().catch(() => ({}));
+
       if (response.ok) {
-        showMessage("success", "SOS sent successfully!");
+        const extra = data.sms_sent
+          ? " Emergency contact notified via SMS."
+          : " Alert logged (SMS may be unavailable — check Twilio Auth Token).";
+        showMessage("success", `SOS sent successfully!${extra}`);
       } else {
-        const data = await response.json();
         showMessage("error", data.detail || "Failed to send SOS.");
       }
     } catch (err) {
@@ -171,8 +177,8 @@ export default function Greet({ navigation }) {
         const file = { uri, name: "sos_recording.m4a", type: "audio/m4a" };
         await uploadRecording(file, true);
         setRecording(null);
+        showMessage("success", "Voice SOS sent successfully!");
       }
-      showMessage("success", "Recording stopped and sent successfully!");
     } catch (err) {
       console.error("Stop recording error:", err);
       showMessage("error", "Failed to stop recording.");
@@ -181,12 +187,19 @@ export default function Greet({ navigation }) {
 
   const uploadRecording = async (audio, isMobile = false, customMessage) => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") return;
+      let latitude = 0;
+      let longitude = 0;
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === "granted") {
+          const location = await Location.getCurrentPositionAsync({});
+          latitude = location.coords.latitude;
+          longitude = location.coords.longitude;
+        }
+      } catch (_) {}
 
-      const location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
-      const phone = (await AsyncStorage.getItem("emergency_contact")) || "+27672531917";
+      const phone =
+        (await Storage.getItem("emergency_contact")) || "+27763951934";
 
       const formData = new FormData();
       formData.append("latitude", latitude.toString());
@@ -194,21 +207,28 @@ export default function Greet({ navigation }) {
       formData.append("phone", phone);
 
       if (isMobile) {
-        formData.append("file", { uri: audio.uri, name: "sos_recording.m4a", type: "audio/m4a" });
+        formData.append("file", {
+          uri: audio.uri,
+          name: "sos_recording.m4a",
+          type: "audio/m4a",
+        });
       } else {
         formData.append("file", audio, "sos_recording.webm");
       }
 
       if (customMessage) formData.append("message", customMessage);
 
-      const response = await fetch(`${ENV.BACKEND_URL}/upload-voice`, { method: "POST", body: formData });
-      const result = await response.json();
+      const response = await fetch(`${ENV.BACKEND_URL}/upload-voice`, {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json().catch(() => ({}));
 
       if (response.ok) {
         showMessage("success", "Voice SOS sent successfully!");
       } else {
         console.error("Upload failed:", result);
-        showMessage("error", JSON.stringify(result));
+        showMessage("error", result.detail || "Failed to send voice SOS.");
       }
     } catch (err) {
       console.error("Upload error:", err);
@@ -224,24 +244,17 @@ export default function Greet({ navigation }) {
     }
 
     try {
-      const savedPin = await AsyncStorage.getItem("emergency_pin");
+      const savedPin = await Storage.getItem("emergency_pin");
       const message =
         savedPin && pin === savedPin
           ? `SOS Cancelled. User sent it by mistake. Reason: ${reason}`
           : `SOS Cancelled. User may have been forced. Reason: ${reason}`;
 
-      if (recording) {
-        await stopRecording();
-        await uploadRecording(recording, Platform.OS !== "web", message);
-      } else {
-        await sendSOS(message);
-      }
+      await sendSOS(message);
 
       setCancelModalVisible(false);
       setPin("");
       setReason("");
-
-      showMessage("success", "SOS request has been successfully cancelled!");
     } catch (err) {
       console.error("Cancel SOS Error:", err);
       showMessage("error", "Failed to cancel SOS request.");
@@ -256,10 +269,14 @@ export default function Greet({ navigation }) {
             styles.sosButton,
             { backgroundColor: recording ? "#7C3AED" : "#8B5CF6" },
           ]}
-          onPress={() => sendSOS()}
+          onPress={() => {
+            if (!recording) sendSOS();
+          }}
           onLongPress={startRecording}
-          onPressOut={stopRecording}
-          delayLongPress={300}
+          onPressOut={() => {
+            if (recording) stopRecording();
+          }}
+          delayLongPress={500}
           activeOpacity={0.8}
         >
           <Icon name="exclamation-triangle" size={50} color="#fff" />

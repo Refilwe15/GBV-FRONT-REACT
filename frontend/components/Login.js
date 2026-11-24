@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome5";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import Storage from "../utils/storage";
 import ENV from "../.env";
 
 // ✅ Reusable Message Modal
@@ -92,9 +92,9 @@ export default function Login({ navigation }) {
       const data = await response.json();
 
       if (response.ok) {
-        await AsyncStorage.setItem("token", data.access_token);
-        await AsyncStorage.setItem("user_type", data.user_type);
-        await AsyncStorage.setItem("email", data.email);
+        await Storage.setItem("token", data.access_token);
+        await Storage.setItem("user_type", data.user_type || "user");
+        await Storage.setItem("email", data.email);
 
         showMessage("success", "Login successful!");
 

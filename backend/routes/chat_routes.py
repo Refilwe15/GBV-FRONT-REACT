@@ -9,6 +9,7 @@ from typing import List
 router = APIRouter(prefix="/chat", tags=["Community Chat"])
 
 @router.post("/", response_model=ChatMessageOut)
+@router.post("", response_model=ChatMessageOut)
 async def send_message(message: ChatMessageCreate, db: AsyncSession = Depends(get_db)):
     chat = ChatMessage(user_email=message.user_email, content=message.content)
     db.add(chat)
@@ -17,6 +18,7 @@ async def send_message(message: ChatMessageCreate, db: AsyncSession = Depends(ge
     return chat
 
 @router.get("/", response_model=List[ChatMessageOut])
+@router.get("", response_model=List[ChatMessageOut])
 async def get_messages(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ChatMessage).order_by(ChatMessage.created_at.asc()))
     messages = result.scalars().all()

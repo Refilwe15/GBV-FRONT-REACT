@@ -1,31 +1,25 @@
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Expo
-.expo/
-.expo-shared/
-
-
-
-logs/
-*.log
-*.out
-*.err
-
-# Docker
-*.pid
-*.sock
-*.swp
-tmp/
-*.tmp
-**/dist/
-**/build/
-.dockerignore
-
-# IDE
-.vscode/
-.idea/
+# Dependencies
+**/node_modules/
+**/venv/
+**/.venv/
+**/__pycache__/
+*.pyc
+# Env / secrets
+.env
+backend/.env
+**/.env.local
+# Local data
+backend/test.db
+backend/sos_alerts/
+backend/uploads/
+*.db
+# OS / IDE
 .DS_Store
+.idea/
+.vscode/
+# Build
+frontend/dist/
+frontend/.expo/
+frontend/web-build/
+backend/render-env.example
+# Secrets & local junk (do not commit)

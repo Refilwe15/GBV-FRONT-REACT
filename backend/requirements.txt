@@ -1,11 +1,10 @@
 fastapi
-uvicorn
-pylint
-pydantic
+uvicorn[standard]
+pydantic[email]
+email-validator
 asyncpg
 sqlalchemy
-pydantic[email]
-psycopg2-binary
+greenlet
 python-dotenv
 pytz
 python-jose==3.3.0
@@ -13,5 +12,5 @@ passlib>=1.7.4
 python-multipart
 bcrypt==4.3.0
 twilio
-librosa
-
+requests
+aiosqlite

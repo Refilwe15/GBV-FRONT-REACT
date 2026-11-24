@@ -27,9 +27,9 @@ class UserOut(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    full_name: str | None = None
-    email: str | None = None
-    type: str | None = None
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    type: Optional[str] = None
 
 
 class Token(BaseModel):

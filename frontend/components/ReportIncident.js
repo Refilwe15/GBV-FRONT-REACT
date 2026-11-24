@@ -16,7 +16,7 @@ import * as DocumentPicker from "expo-document-picker";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import Feather from "react-native-vector-icons/Feather";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import Storage from "../utils/storage";
 import ENV from "../.env";
 
 const apiKey = "56da46010d5d487287ef5f2ef247c8ee";
@@ -104,8 +104,31 @@ export default function ReportIncident({ navigation }) {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ["image/*", "video/*"],
+        copyToCacheDirectory: true,
+        multiple: false,
       });
-      if (result.type === "success") setMedia(result);
+
+      // Expo DocumentPicker v14+: { canceled, assets }
+      if (result.canceled) return;
+      if (result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setMedia({
+          uri: asset.uri,
+          name: asset.name || "attachment",
+          mimeType: asset.mimeType || "application/octet-stream",
+          file: asset.file,
+        });
+        return;
+      }
+
+      // Legacy shape
+      if (result.type === "success") {
+        setMedia({
+          uri: result.uri,
+          name: result.name || "attachment",
+          mimeType: result.mimeType || "application/octet-stream",
+        });
+      }
     } catch (err) {
       console.error(err);
       showMessage("error", "Failed to pick a file.");
@@ -123,26 +146,30 @@ export default function ReportIncident({ navigation }) {
 
     try {
       const formData = new FormData();
+      const email = await Storage.getItem("email");
+      const makeAnonymous = anonymous || !email;
 
       formData.append("location", query);
       formData.append("description", description);
-      formData.append("anonymous", anonymous ? "true" : "false");
+      formData.append("anonymous", makeAnonymous ? "true" : "false");
 
-      if (!anonymous) {
-        const email = await AsyncStorage.getItem("email");
-        if (email) {
-          formData.append("reporter_email", email);
-        } else {
-          showMessage("info", "You are not logged in. Your report will be anonymous.");
-        }
+      if (!makeAnonymous && email) {
+        formData.append("reporter_email", email);
       }
 
       if (media) {
-        formData.append("attachment", {
-          uri: Platform.OS === "android" ? media.uri : media.uri.replace("file://", ""),
-          name: media.name,
-          type: media.mimeType || "application/octet-stream",
-        });
+        if (Platform.OS === "web" && media.file) {
+          formData.append("attachment", media.file, media.name);
+        } else if (Platform.OS === "web" && media.uri) {
+          const blob = await fetch(media.uri).then((r) => r.blob());
+          formData.append("attachment", blob, media.name || "attachment");
+        } else {
+          formData.append("attachment", {
+            uri: media.uri,
+            name: media.name || "attachment",
+            type: media.mimeType || "application/octet-stream",
+          });
+        }
       }
 
       const response = await fetch(`${ENV.BACKEND_URL}/incidents/`, {
@@ -150,7 +177,7 @@ export default function ReportIncident({ navigation }) {
         body: formData,
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
         showMessage("success", "Incident submitted successfully!");
@@ -159,7 +186,11 @@ export default function ReportIncident({ navigation }) {
         setAnonymous(false);
         setMedia(null);
       } else {
-        showMessage("error", data.detail || "Submission failed. Try again.");
+        const detail =
+          typeof data.detail === "string"
+            ? data.detail
+            : "Submission failed. Try again.";
+        showMessage("error", detail);
       }
     } catch (err) {
       console.error(err);
